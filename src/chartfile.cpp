@@ -1,0 +1,522 @@
+#include <cstring>
+#include <fstream>
+#include <iostream>
+#include <memory>
+#include <unordered_map>
+
+#include "oesenc/chartfile.h"
+#include "oesenc/chartreader.h"
+#include "oesenc/depth.h"
+#include "oesenc/opencpn.h"
+#include "oesenc/s57.h"
+
+#define HEADER_SENC_VERSION 1
+#define HEADER_CELL_NAME 2
+#define HEADER_CELL_PUBLISHDATE 3
+#define HEADER_CELL_EDITION 4
+#define HEADER_CELL_UPDATEDATE 5
+#define HEADER_CELL_UPDATE 6
+#define HEADER_CELL_NATIVESCALE 7
+#define HEADER_CELL_SENCCREATEDATE 8
+#define HEADER_CELL_SOUNDINGDATUM 9
+
+#define FEATURE_ID_RECORD 64
+#define FEATURE_ATTRIBUTE_RECORD 65
+
+#define FEATURE_GEOMETRY_RECORD_POINT 80
+#define FEATURE_GEOMETRY_RECORD_LINE 81
+#define FEATURE_GEOMETRY_RECORD_AREA 82
+#define FEATURE_GEOMETRY_RECORD_MULTIPOINT 83
+#define FEATURE_GEOMETRY_RECORD_AREA_EXT 84
+
+#define VECTOR_EDGE_NODE_TABLE_EXT_RECORD 85
+#define VECTOR_CONNECTED_NODE_TABLE_EXT_RECORD 86
+
+#define VECTOR_EDGE_NODE_TABLE_RECORD 96
+#define VECTOR_CONNECTED_NODE_TABLE_RECORD 97
+
+#define CELL_COVR_RECORD 98
+#define CELL_NOCOVR_RECORD 99
+#define CELL_EXTENT_RECORD 100
+#define CELL_TXTDSC_INFO_FILE_RECORD 101
+
+ChartFile::ChartFile()
+{
+}
+
+ChartFile::~ChartFile()
+{
+    if (pBuffer) {
+        free(pBuffer);
+    }
+}
+
+std::vector<DepthArea> ChartFile::depths() const
+{
+    return m_depths;
+}
+
+Area ChartFile::landArea() const
+{
+    return m_landArea;
+}
+
+std::vector<Sounding> ChartFile::soundings() const
+{
+    return m_soundings;
+}
+
+std::vector<Area> ChartFile::builtUpAreas() const
+{
+    return m_builtUpAreas;
+}
+
+void ChartFile::read(const std::string &file)
+{
+    std::unordered_map<int, std::shared_ptr<S57::VectorEdge>> vectorEdges;
+    std::unordered_map<int, S57::ConnectedNode> connectedNodes;
+    std::vector<std::shared_ptr<S57>> s57Vector;
+
+    if (!ingest200(file, s57Vector, vectorEdges, connectedNodes)) {
+        std::cerr << "Failed to read";
+        return;
+    }
+
+    for (const std::shared_ptr<S57> &obj : s57Vector) {
+        if (obj->type() == S57::Type::LandArea) {
+            obj->buildGeometry(vectorEdges, connectedNodes);
+            if (!obj->area().isEmpty()) {
+                m_landArea += obj->area();
+            }
+        } else if (obj->type() == S57::Type::DepthArea) {
+            obj->buildGeometry(vectorEdges, connectedNodes);
+            m_depths.push_back(DepthArea(obj->depth(), obj->polygons()));
+        } else if (obj->type() == S57::Type::BuiltUpArea) {
+            obj->buildGeometry(vectorEdges, connectedNodes);
+            m_builtUpAreas.push_back(Area(obj->polygons()));
+        } else if (obj->type() == S57::Type::Sounding) {
+            Sounding sounding(obj->depths());
+            m_soundings.push_back(sounding);
+        }
+    }
+}
+
+bool ChartFile::ingest200(const std::string &senc_file_name,
+                          std::vector<std::shared_ptr<S57>> &s57Vector,
+                          std::unordered_map<int, std::shared_ptr<S57::VectorEdge>> &vectorEdges,
+                          std::unordered_map<int, S57::ConnectedNode> &connectedNodes)
+{
+    ChartReader fpx;
+
+    if (!fpx.Open(senc_file_name)) {
+        return false;
+    }
+
+    std::shared_ptr<S57> s57;
+
+    while (true) {
+        OSENC_Record_Base record;
+        if (!fpx.Read(&record, sizeof(OSENC_Record_Base))) {
+            break;
+        }
+
+        switch (record.record_type) {
+        case HEADER_SENC_VERSION: {
+            unsigned char *buf = getBuffer(record.record_length - sizeof(OSENC_Record_Base));
+            if (!fpx.Read(buf, record.record_length - sizeof(OSENC_Record_Base))) {
+                return false;
+            }
+            uint16_t *pint = (uint16_t *)buf;
+            m_senc_file_read_version = *pint;
+
+            if (m_senc_file_read_version < 201) {
+                std::cerr << "Libray not compatible with versions under 201" << std::endl;
+            } else if (m_senc_file_read_version > 201) {
+                std::cerr << "Libray has not been tested with newer versions" << std::endl;
+            }
+            break;
+        }
+        case HEADER_CELL_NAME: {
+            unsigned char *buf = getBuffer(record.record_length - sizeof(OSENC_Record_Base));
+            if (!fpx.Read(buf, record.record_length - sizeof(OSENC_Record_Base))) {
+                return false;
+            }
+            m_Name = reinterpret_cast<const char *>(buf);
+            break;
+        }
+        case HEADER_CELL_PUBLISHDATE: {
+            unsigned char *buf = getBuffer(record.record_length - sizeof(OSENC_Record_Base));
+            if (!fpx.Read(buf, record.record_length - sizeof(OSENC_Record_Base))) {
+                return false;
+            }
+            m_sdate000 = reinterpret_cast<const char *>(buf);
+            break;
+        }
+
+        case HEADER_CELL_EDITION: {
+            unsigned char *buf = getBuffer(record.record_length - sizeof(OSENC_Record_Base));
+            if (!fpx.Read(buf, record.record_length - sizeof(OSENC_Record_Base))) {
+                return false;
+            }
+            uint16_t *pint = (uint16_t *)buf;
+            m_read_base = *pint;
+            break;
+        }
+
+        case HEADER_CELL_UPDATEDATE: {
+            unsigned char *buf = getBuffer(record.record_length - sizeof(OSENC_Record_Base));
+            if (!fpx.Read(buf, record.record_length - sizeof(OSENC_Record_Base))) {
+                return false;
+            }
+            m_LastUpdateDate = reinterpret_cast<const char *>(buf);
+            break;
+        }
+
+        case HEADER_CELL_UPDATE: {
+            unsigned char *buf = getBuffer(record.record_length - sizeof(OSENC_Record_Base));
+            if (!fpx.Read(buf, record.record_length - sizeof(OSENC_Record_Base))) {
+                return false;
+            }
+            uint16_t *pint = (uint16_t *)buf;
+            m_read_last_applied_update = *pint;
+            break;
+        }
+
+        case HEADER_CELL_NATIVESCALE: {
+            unsigned char *buf = getBuffer(record.record_length - sizeof(OSENC_Record_Base));
+            if (!fpx.Read(buf, record.record_length - sizeof(OSENC_Record_Base))) {
+                return false;
+            }
+            uint32_t *pint = (uint32_t *)buf;
+            m_Chart_Scale = *pint;
+            break;
+        }
+
+        case HEADER_CELL_SOUNDINGDATUM: {
+            unsigned char *buf = getBuffer(record.record_length - sizeof(OSENC_Record_Base));
+            if (!fpx.Read(buf, record.record_length - sizeof(OSENC_Record_Base))) {
+                return false;
+            }
+            m_SoundingDatum = reinterpret_cast<const char *>(buf);
+            break;
+        }
+
+        case HEADER_CELL_SENCCREATEDATE: {
+            unsigned char *buf = getBuffer(record.record_length - sizeof(OSENC_Record_Base));
+            if (!fpx.Read(buf, record.record_length - sizeof(OSENC_Record_Base))) {
+                return false;
+            }
+            break;
+        }
+
+        case CELL_EXTENT_RECORD: {
+            unsigned char *buf = getBuffer(record.record_length - sizeof(OSENC_Record_Base));
+            if (!fpx.Read(buf, record.record_length - sizeof(OSENC_Record_Base))) {
+                return false;
+            }
+            _OSENC_EXTENT_Record_Payload *pPayload = (_OSENC_EXTENT_Record_Payload *)buf;
+            const Position upperLeft(pPayload->extent_nw_lat, pPayload->extent_nw_lon);
+            const Position lowerRight(pPayload->extent_se_lat, pPayload->extent_se_lon);
+            m_extent = Rect(upperLeft, lowerRight);
+            break;
+        }
+
+        case CELL_COVR_RECORD: {
+            unsigned char *buf = getBuffer(record.record_length - sizeof(OSENC_Record_Base));
+            if (!fpx.Read(buf, record.record_length - sizeof(OSENC_Record_Base))) {
+                return false;
+            }
+            break;
+        }
+
+        case CELL_NOCOVR_RECORD: {
+            unsigned char *buf = getBuffer(record.record_length - sizeof(OSENC_Record_Base));
+            if (!fpx.Read(buf, record.record_length - sizeof(OSENC_Record_Base))) {
+                return false;
+            }
+            break;
+        }
+
+        case FEATURE_ID_RECORD: {
+            unsigned char *buf = getBuffer(record.record_length - sizeof(OSENC_Record_Base));
+            if (!fpx.Read(buf, record.record_length - sizeof(OSENC_Record_Base))) {
+                return false;
+            }
+            _OSENC_Feature_Identification_Record_Payload *pPayload = (_OSENC_Feature_Identification_Record_Payload *)buf;
+            S57::Type typeCode = S57::fromTypeCode(pPayload->feature_type_code);
+            s57 = std::make_shared<S57>(typeCode);
+            s57Vector.push_back(s57);
+            break;
+        }
+
+        case FEATURE_ATTRIBUTE_RECORD: {
+            unsigned char *buf = getBuffer(record.record_length - sizeof(OSENC_Record_Base));
+            if (!fpx.Read(buf, record.record_length - sizeof(OSENC_Record_Base))) {
+                return false;
+            }
+            OSENC_Attribute_Record_Payload *pPayload = (OSENC_Attribute_Record_Payload *)buf;
+
+            int attributeValueType = pPayload->attribute_value_type;
+
+            S57::Attribute attribute = S57::attributeFromTypeCode(pPayload->attribute_type_code);
+
+            if (attribute != S57::Attribute::Unknown) {
+                switch (attributeValueType) {
+                case 0: {
+                    // uint32_t val = pPayload->attribute_value_int;
+                    /* if (obj) {
+                        obj->AddIntegerAttribute( acronym.c_str(), (int)val );
+                    }*/
+                    break;
+                }
+
+                case 1: // Integer list
+                {
+                    // Calculate the number of elements from the record size
+                    //int nCount = (record.record_length - sizeof(_OSENC_Attribute_Record)) ;
+
+                    break;
+                }
+                case 2: // Single double precision real
+                {
+                    double val = pPayload->attribute_value_double;
+                    // if(obj)
+                    // obj->AddDoubleAttribute( acronym.c_str(), val );
+                    // Just to get one of the depth values
+                    if (attribute == S57::Attribute::DepthValue1) {
+                        s57->setDepth(static_cast<float>(val));
+                    }
+                    break;
+                }
+
+                case 3: // List of double precision real
+                {
+                    //TODO
+                    break;
+                }
+
+                case 4: // Ascii String
+                {
+                    // char *val = (char *)&pPayload->attribute_value_char_ptr;
+                    /*if (obj) {
+                        obj->AddStringAttribute( acronym.c_str(), val );
+                    }*/
+
+                    break;
+                }
+
+                default:
+                    break;
+                }
+            }
+
+            break;
+        }
+
+        case FEATURE_GEOMETRY_RECORD_POINT: {
+            unsigned char *buf = getBuffer(record.record_length - sizeof(OSENC_Record_Base));
+            if (!fpx.Read(buf, record.record_length - sizeof(OSENC_Record_Base))) {
+                return false;
+            }
+            break;
+        }
+
+        case FEATURE_GEOMETRY_RECORD_AREA: {
+            unsigned char *buf = getBuffer(record.record_length - sizeof(OSENC_Record_Base));
+            if (!fpx.Read(buf, record.record_length - sizeof(OSENC_Record_Base))) {
+                return false;
+            }
+            _OSENC_AreaGeometry_Record_Payload *pPayload = (_OSENC_AreaGeometry_Record_Payload *)buf;
+
+            if (s57 != nullptr) {
+                unsigned char *next_byte = nullptr;
+                next_byte = skipTessellationData(pPayload);
+                s57->setLineGeometry(reinterpret_cast<S57::LineElement *>(next_byte),
+                                     pPayload->edgeVector_count);
+            }
+
+            break;
+        }
+
+        case FEATURE_GEOMETRY_RECORD_AREA_EXT: {
+            unsigned char *buf = getBuffer(record.record_length - sizeof(OSENC_Record_Base));
+            if (!fpx.Read(buf, record.record_length - sizeof(OSENC_Record_Base))) {
+                return false;
+            }
+            break;
+        }
+
+        case FEATURE_GEOMETRY_RECORD_LINE: {
+            unsigned char *buf = getBuffer(record.record_length - sizeof(OSENC_Record_Base));
+            if (!fpx.Read(buf, record.record_length - sizeof(OSENC_Record_Base))) {
+                return false;
+            }
+            _OSENC_LineGeometry_Record_Payload *pPayload = (_OSENC_LineGeometry_Record_Payload *)buf;
+            if (s57 != nullptr) {
+                s57->setLineGeometry(reinterpret_cast<S57::LineElement *>(&pPayload->payLoad),
+                                     pPayload->edgeVector_count);
+            }
+            break;
+        }
+
+        case FEATURE_GEOMETRY_RECORD_MULTIPOINT: {
+            unsigned char *buf = getBuffer(record.record_length - sizeof(OSENC_Record_Base));
+            if (!fpx.Read(buf, record.record_length - sizeof(OSENC_Record_Base))) {
+                return false;
+            }
+            OSENC_MultipointGeometry_Record_Payload *pPayload = (OSENC_MultipointGeometry_Record_Payload *)buf;
+            std::vector<Depth> depths;
+
+            float *pointTable = reinterpret_cast<float *>(&pPayload->payLoad);
+
+            for (unsigned int i = 0; i < pPayload->point_count; i++) {
+                double easting = pointTable[i * 3 + 0];
+                double northing = pointTable[i * 3 + 1];
+                double depth = pointTable[i * 3 + 2];
+                const Position position = OpenCPN::fromSimpleMercator(easting,
+                                                                      northing,
+                                                                      m_extent.center());
+                depths.push_back(Depth(position, depth));
+            }
+            if (s57 != nullptr) {
+                s57->setDepths(depths);
+            }
+            break;
+        }
+
+        case VECTOR_EDGE_NODE_TABLE_RECORD: {
+            unsigned char *buf = getBuffer(record.record_length - sizeof(OSENC_Record_Base));
+            if (!fpx.Read(buf, record.record_length - sizeof(OSENC_Record_Base))) {
+                return false;
+            }
+            uint8_t *pRun = (uint8_t *)buf;
+            int nCount = *(int *)pRun;
+            pRun += sizeof(int);
+
+            for (int i = 0; i < nCount; i++) {
+                unsigned int featureIndex = *(int *)pRun;
+                pRun += sizeof(int);
+
+                int pointCount = *(int *)pRun;
+                pRun += sizeof(int);
+
+                float *pPoints = NULL;
+                if (pointCount) {
+                    pPoints = (float *)malloc(pointCount * 2 * sizeof(float));
+                    std::memcpy(pPoints, pRun, pointCount * 2 * sizeof(float));
+                }
+                pRun += pointCount * 2 * sizeof(float);
+                std::shared_ptr<S57::VectorEdge> vectorEdge = std::make_shared<S57::VectorEdge>();
+                std::vector<Position> positions;
+                Position ref = m_extent.center();
+                for (int i = 0; i < pointCount; i++) {
+                    positions.push_back(OpenCPN::fromSimpleMercator(pPoints[i * 2],
+                                                                    pPoints[i * 2 + 1],
+                                                                    ref));
+                }
+                free(pPoints);
+                vectorEdge->setPositions(positions);
+                // The index should be representable by a positive 32 bit integer
+                if (featureIndex > 0x7FFFFFFF) {
+                    std::cerr << "Found bad vector edge index: " << featureIndex << std::endl;
+                } else {
+                    vectorEdges[featureIndex] = vectorEdge;
+                }
+            }
+            break;
+        }
+
+        case VECTOR_EDGE_NODE_TABLE_EXT_RECORD: {
+            unsigned char *buf = getBuffer(record.record_length - sizeof(OSENC_Record_Base));
+            if (!fpx.Read(buf, record.record_length - sizeof(OSENC_Record_Base))) {
+                return false;
+            }
+            break;
+        }
+
+        case VECTOR_CONNECTED_NODE_TABLE_RECORD: {
+            long unsigned int buf_len = record.record_length - sizeof(OSENC_Record_Base);
+            unsigned char *buf = getBuffer(buf_len);
+            if (!fpx.Read(buf, buf_len)) {
+                return false;
+            }
+
+            uint8_t *pRun = (uint8_t *)buf;
+            int nCount = *(int *)pRun;
+            pRun += sizeof(int);
+
+            for (int i = 0; i < nCount; i++) {
+                unsigned int featureIndex = *(int *)pRun;
+
+                pRun += sizeof(int);
+                float *pt = (float *)pRun;
+                pt++;
+
+                float *pPoint = (float *)malloc(2 * sizeof(float));
+                memcpy(pPoint, pRun, 2 * sizeof(float));
+                pRun += 2 * sizeof(float);
+
+                // Could be simplified to just Position now
+                S57::ConnectedNode connectedNode(OpenCPN::fromSimpleMercator(pPoint[0],
+                                                                             pPoint[1],
+                                                                             m_extent.center()));
+                connectedNodes[featureIndex] = connectedNode;
+            }
+            break;
+        }
+
+        case CELL_TXTDSC_INFO_FILE_RECORD: {
+            unsigned char *buf = getBuffer(record.record_length - sizeof(OSENC_Record_Base));
+            if (!fpx.Read(buf, record.record_length - sizeof(OSENC_Record_Base))) {
+                return false;
+            }
+            break;
+        }
+
+        default:
+            if (record.record_type == 0) {
+                return true;
+            } else {
+                std::cerr << "Unrecognized Record: " << record.record_type << std::endl;
+                return false;
+            }
+            break;
+        }
+    }
+    return true;
+}
+
+uint8_t *ChartFile::skipTessellationData(_OSENC_AreaGeometry_Record_Payload *record)
+{
+    unsigned int n_TriPrim = record->triprim_count;
+    int nContours = record->contour_count;
+
+    //  Get a pointer to the payload
+    void *payLoad = &record->payLoad;
+
+    //  The point count array is the first element in the payload, length is known
+    int *contour_pointcount_array_run = (int *)payLoad;
+    contour_pointcount_array_run += nContours;
+
+    uint8_t *pPayloadRun = (uint8_t *)contour_pointcount_array_run; //Points to the start of the triangle primitives
+
+    for (unsigned int i = 0; i < n_TriPrim; i++) {
+        pPayloadRun++;
+        const int nvert = *(uint32_t *)pPayloadRun;
+        const long unsigned int byte_size = nvert * 2 * sizeof(float);
+        pPayloadRun += sizeof(uint32_t);
+        pPayloadRun += 4 * sizeof(double);
+        pPayloadRun += byte_size;
+    }
+
+    return pPayloadRun;
+}
+
+unsigned char *ChartFile::getBuffer(size_t length)
+{
+    if (length > bufferSize) {
+        pBuffer = (unsigned char *)realloc(pBuffer, length * 2);
+        bufferSize = length * 2;
+    }
+    return pBuffer;
+}
