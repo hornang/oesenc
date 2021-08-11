@@ -5,7 +5,11 @@ project(oesenc LANGUAGES CXX)
 set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-add_compile_options(-Wall -Wextra -pedantic)
+if (MSVC)
+    add_compile_options(/WX)
+else()
+    add_compile_options(-Wall -Wextra -pedantic)
+endif()
 
 add_library(oesenc
     include/oesenc/area.h
