@@ -94,33 +94,33 @@ void S57::buildLine(const std::unordered_map<int, std::shared_ptr<S57::VectorEdg
     Line line;
 
     while (it != m_lineElements.end()) {
-        LineElement *lineElement = &it->second;
+        const LineElement lineElement = it->second;
 
-        auto connectedNodeIt = connectedNodes.find(lineElement->startConnectedNode);
+        auto connectedNodeIt = connectedNodes.find(lineElement.startConnectedNode);
         if (connectedNodeIt != connectedNodes.end()) {
             pos.push_back(connectedNodeIt->second.position());
         } else {
-            std::cerr << "Connected node index " << lineElement->startConnectedNode << " not found" << std::endl;
+            std::cerr << "Connected node index " << lineElement.startConnectedNode << " not found" << std::endl;
         }
 
-        if (lineElement->edgeVector != 0) {
-            auto vectorEdgeIt = vectorEdges.find(lineElement->edgeVector);
+        if (lineElement.edgeVector != 0) {
+            auto vectorEdgeIt = vectorEdges.find(lineElement.edgeVector);
             if (vectorEdgeIt != vectorEdges.end()) {
                 std::shared_ptr<S57::VectorEdge> edge = vectorEdgeIt->second;
                 const std::vector<Position> &positions = edge->positions();
 
-                if (lineElement->direction == S57::Direction::Reverse) {
+                if (lineElement.direction == S57::Direction::Reverse) {
                     pos.insert(pos.end(), positions.rbegin(), positions.rend());
                 } else {
                     pos.insert(pos.end(), positions.begin(), positions.end());
                 }
             } else {
-                std::cerr << "Vector edge " << lineElement->edgeVector << " not found" << std::endl;
+                std::cerr << "Vector edge " << lineElement.edgeVector << " not found" << std::endl;
             }
         }
 
         m_lineElements.erase(it);
-        it = m_lineElements.find(lineElement->endConnectedNode);
+        it = m_lineElements.find(lineElement.endConnectedNode);
 
         if (it == m_lineElements.end()) {
             it = m_lineElements.begin();
@@ -129,7 +129,7 @@ void S57::buildLine(const std::unordered_map<int, std::shared_ptr<S57::VectorEdg
                 pos.clear();
             }
         } else {
-            std::cerr << "Connected node index " << lineElement->endConnectedNode << " not found" << std::endl;
+            std::cerr << "Connected node index " << lineElement.endConnectedNode << " not found" << std::endl;
         }
     }
 
@@ -155,33 +155,33 @@ void S57::buildArea(const std::unordered_map<int, std::shared_ptr<S57::VectorEdg
     Area area;
 
     while (it != m_lineElements.end()) {
-        LineElement *lineElement = &it->second;
+        const LineElement lineElement = it->second;
 
-        auto connectedNodeIt = connectedNodes.find(lineElement->startConnectedNode);
+        auto connectedNodeIt = connectedNodes.find(lineElement.startConnectedNode);
         if (connectedNodeIt != connectedNodes.end()) {
             polygonPositions.push_back(connectedNodeIt->second.position());
         } else {
-            std::cerr << "Connected node " << lineElement->startConnectedNode << " not found" << std::endl;
+            std::cerr << "Connected node " << lineElement.startConnectedNode << " not found" << std::endl;
         }
 
-        if (lineElement->edgeVector != 0) {
-            auto vectorEdgeIt = vectorEdges.find(lineElement->edgeVector);
+        if (lineElement.edgeVector != 0) {
+            auto vectorEdgeIt = vectorEdges.find(lineElement.edgeVector);
             if (vectorEdgeIt != vectorEdges.end()) {
                 const std::shared_ptr<S57::VectorEdge> edge = vectorEdgeIt->second;
                 const std::vector<Position> &positions = edge->positions();
 
-                if (lineElement->direction == S57::Direction::Reverse) {
+                if (lineElement.direction == S57::Direction::Reverse) {
                     polygonPositions.insert(polygonPositions.end(), positions.rbegin(), positions.rend());
                 } else {
                     polygonPositions.insert(polygonPositions.end(), positions.begin(), positions.end());
                 }
             } else {
-                std::cerr << "Vector edge " << lineElement->edgeVector << " not found" << std::endl;
+                std::cerr << "Vector edge " << lineElement.edgeVector << " not found" << std::endl;
             }
         }
 
         m_lineElements.erase(it);
-        it = m_lineElements.find(lineElement->endConnectedNode);
+        it = m_lineElements.find(lineElement.endConnectedNode);
 
         if (it == m_lineElements.end()) {
             it = m_lineElements.begin();
