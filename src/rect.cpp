@@ -88,6 +88,16 @@ Position Rect::topLeft() const
     return m_topLeft;
 }
 
+double Rect::longitudeSpan() const
+{
+    return m_bottomRight.longitude() - topLeft().longitude();
+}
+
+double Rect::latitudeSpan() const
+{
+    return m_topLeft.latitude() - bottomRight().latitude();
+}
+
 Position Rect::bottomRight() const
 {
     return m_bottomRight;

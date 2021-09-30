@@ -10,6 +10,8 @@ public:
     Rect &operator=(const Rect &rect);
     bool intersects(const Rect &rect) const;
     bool contains(const Position &position) const;
+    double longitudeSpan() const;
+    double latitudeSpan() const;
     Position topLeft() const;
     Position bottomRight() const;
     Position center() const;
