@@ -108,3 +108,9 @@ Position Rect::center() const
     return Position((m_topLeft.latitude() + m_bottomRight.latitude()) / 2.,
                     (m_topLeft.longitude() + m_bottomRight.longitude()) / 2.);
 }
+
+std::ostream &operator<<(std::ostream &os, const Rect &rect)
+{
+    os << "Top left: " << rect.topLeft() << " Bottom right: " << rect.bottomRight();
+    return os;
+}
