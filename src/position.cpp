@@ -34,6 +34,6 @@ bool Position::operator!=(const Position &position) const
 
 std::ostream &operator<<(std::ostream &os, const Position &position)
 {
-    os << position.longitude() << "N," << position.latitude() << "E";
+    os << position.latitude() << " " << position.longitude();
     return os;
 }
