@@ -9,6 +9,8 @@
 #include "s57.h"
 #include "sounding.h"
 
+#include "oesenc_export.h"
+
 #pragma pack(push, 1)
 
 typedef struct _OSENC_Record_Base
@@ -338,29 +340,29 @@ typedef struct _OSENC_EXTENT_Record_Payload
 class ChartFile
 {
 public:
-    ChartFile();
-    ~ChartFile();
-    void read(const std::string &file);
+    OESENC_EXPORT ChartFile();
+    OESENC_EXPORT ~ChartFile();
+    OESENC_EXPORT void read(const std::string &file);
 
-    Area landArea() const;
-    std::vector<Sounding> soundings() const;
-    std::vector<DepthArea> depths() const;
-    std::vector<Area> builtUpAreas() const;
+    OESENC_EXPORT Area landArea() const;
+    OESENC_EXPORT std::vector<Sounding> soundings() const;
+    OESENC_EXPORT std::vector<DepthArea> depths() const;
+    OESENC_EXPORT std::vector<Area> builtUpAreas() const;
 
-    int getReadVersion() { return m_senc_file_read_version; }
-    int getSencReadVersion() { return m_senc_file_read_version; }
-    int getSENCReadLastUpdate() { return m_read_last_applied_update; }
-    int getSENCReadScale() { return m_Chart_Scale; }
-    std::string getUpdateDate() { return m_LastUpdateDate; }
-    std::string getBaseDate() { return m_sdate000; }
-    std::string getReadName() { return m_Name; }
-    std::string getSoundingsDatumString() { return m_SoundingDatum; }
+    OESENC_EXPORT int getReadVersion() { return m_senc_file_read_version; }
+    OESENC_EXPORT int getSencReadVersion() { return m_senc_file_read_version; }
+    OESENC_EXPORT int getSENCReadLastUpdate() { return m_read_last_applied_update; }
+    OESENC_EXPORT int getSENCReadScale() { return m_Chart_Scale; }
+    OESENC_EXPORT std::string getUpdateDate() { return m_LastUpdateDate; }
+    OESENC_EXPORT std::string getBaseDate() { return m_sdate000; }
+    OESENC_EXPORT std::string getReadName() { return m_Name; }
+    OESENC_EXPORT std::string getSoundingsDatumString() { return m_SoundingDatum; }
 
-    Rect &getReadExtent() { return m_extent; }
-    Rect extent() const { return m_extent; }
+    OESENC_EXPORT Rect &getReadExtent() { return m_extent; }
+    OESENC_EXPORT Rect extent() const { return m_extent; }
 
-    void InitializePersistentBuffer(void);
-    unsigned char *getBuffer(size_t length);
+    OESENC_EXPORT void InitializePersistentBuffer(void);
+    OESENC_EXPORT unsigned char *getBuffer(size_t length);
 
 private:
     bool ingest200(const std::string &senc_file_name,

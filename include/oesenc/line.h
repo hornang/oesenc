@@ -6,9 +6,9 @@
 class Line
 {
 public:
-    Line() { }
-    void addLine(const std::vector<Position> &line);
-    std::vector<std::vector<Position>> lines() const;
+    OESENC_EXPORT Line() { }
+    OESENC_EXPORT void addLine(const std::vector<Position> &line);
+    OESENC_EXPORT std::vector<std::vector<Position>> lines() const;
 
 private:
     std::vector<std::vector<Position>> m_lines;

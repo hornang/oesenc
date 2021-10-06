@@ -3,6 +3,8 @@
 #include <fstream>
 #include <iostream>
 
+#include "oesenc_export.h"
+
 class ChartReader
 {
 public:

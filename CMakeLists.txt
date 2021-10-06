@@ -37,4 +37,8 @@ add_library(oesenc
     src/opencpn.cpp
 )
 
+include(GenerateExportHeader)
+generate_export_header(oesenc)
+
 target_include_directories(oesenc PUBLIC include)
+target_include_directories(oesenc PUBLIC ${CMAKE_CURRENT_BINARY_DIR})

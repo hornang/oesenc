@@ -2,7 +2,9 @@
 
 #include "position.h"
 
-class Depth
+#include "oesenc_export.h"
+
+class OESENC_EXPORT Depth
 {
 public:
     Depth(double latitude, double longitude, double depth);

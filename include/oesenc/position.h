@@ -4,7 +4,9 @@
 
 #include <iostream>
 
-class Position
+#include "oesenc_export.h"
+
+class OESENC_EXPORT Position
 {
 public:
     Position() { }

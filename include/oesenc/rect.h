@@ -1,7 +1,9 @@
 #pragma once
 #include "position.h"
 
-class Rect
+#include "oesenc_export.h"
+
+class OESENC_EXPORT Rect
 {
 public:
     Rect();
@@ -30,3 +32,5 @@ private:
     Position m_bottomRight;
     bool m_valid = false;
 };
+
+std::ostream &operator<<(std::ostream &os, const Rect &rect);

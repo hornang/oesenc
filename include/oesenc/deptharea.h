@@ -1,14 +1,17 @@
 #pragma once
 
-#include "polygon.h"
 #include <vector>
+
+#include "polygon.h"
+
+#include "oesenc_export.h"
 
 class DepthArea
 {
 public:
-    DepthArea(float depth, const std::vector<Polygon> &polygons);
-    std::vector<Polygon> polygons() const;
-    float depth() const;
+    OESENC_EXPORT DepthArea(float depth, const std::vector<Polygon> &polygons);
+    OESENC_EXPORT std::vector<Polygon> polygons() const;
+    OESENC_EXPORT float depth() const;
 
 private:
     float m_depth = 0;

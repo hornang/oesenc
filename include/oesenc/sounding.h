@@ -4,11 +4,13 @@
 
 #include "depth.h"
 
+#include "oesenc_export.h"
+
 class Sounding
 {
 public:
-    Sounding(const std::vector<Depth> &depths);
-    std::vector<Depth> depths() const;
+    OESENC_EXPORT Sounding(const std::vector<Depth> &depths);
+    OESENC_EXPORT std::vector<Depth> depths() const;
 
 private:
     std::vector<Depth> m_depths;

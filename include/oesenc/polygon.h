@@ -3,13 +3,15 @@
 #include "position.h"
 #include <vector>
 
+#include "oesenc_export.h"
+
 class Polygon
 {
 public:
-    Polygon();
-    Polygon(const std::vector<Position> &positions);
-    std::vector<Position> positions() const;
-    void addPosition(const Position &position);
+    OESENC_EXPORT Polygon();
+    OESENC_EXPORT Polygon(const std::vector<Position> &positions);
+    OESENC_EXPORT std::vector<Position> positions() const;
+    OESENC_EXPORT void addPosition(const Position &position);
 
 private:
     std::vector<Position> m_positions;
