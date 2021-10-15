@@ -51,7 +51,7 @@ ChartFile::~ChartFile()
     }
 }
 
-void ChartFile::read(const std::string &file)
+bool ChartFile::read(const std::string &file)
 {
     std::unordered_map<int, std::shared_ptr<S57::VectorEdge>> vectorEdges;
     std::unordered_map<int, S57::ConnectedNode> connectedNodes;
@@ -59,12 +59,15 @@ void ChartFile::read(const std::string &file)
 
     if (!ingest200(file, s57Vector, vectorEdges, connectedNodes)) {
         std::cerr << "Failed to read";
-        return;
+        return false;
     }
 
     for (const std::shared_ptr<S57> &obj : s57Vector) {
         obj->buildGeometry(vectorEdges, connectedNodes);
     }
+
+    m_s57 = s57Vector;
+    return true;
 }
 
 bool ChartFile::ingest200(const std::string &senc_file_name,

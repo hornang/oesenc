@@ -342,7 +342,7 @@ class ChartFile
 public:
     OESENC_EXPORT ChartFile();
     OESENC_EXPORT ~ChartFile();
-    OESENC_EXPORT void read(const std::string &file);
+    OESENC_EXPORT bool read(const std::string &file);
     OESENC_EXPORT int getReadVersion() { return m_senc_file_read_version; }
     OESENC_EXPORT int getSencReadVersion() { return m_senc_file_read_version; }
     OESENC_EXPORT int getSENCReadLastUpdate() { return m_read_last_applied_update; }
@@ -357,6 +357,7 @@ public:
 
     OESENC_EXPORT void InitializePersistentBuffer(void);
     OESENC_EXPORT unsigned char *getBuffer(size_t length);
+    OESENC_EXPORT const std::vector<std::shared_ptr<S57>> &s57() const { return m_s57; }
 
 private:
     bool ingest200(const std::string &senc_file_name,
@@ -382,4 +383,5 @@ private:
     unsigned char *pBuffer = nullptr;
     size_t bufferSize = 0;
     Rect m_extent;
+    std::vector<std::shared_ptr<S57>> m_s57;
 };
