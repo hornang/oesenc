@@ -51,26 +51,6 @@ ChartFile::~ChartFile()
     }
 }
 
-std::vector<DepthArea> ChartFile::depths() const
-{
-    return m_depths;
-}
-
-Area ChartFile::landArea() const
-{
-    return m_landArea;
-}
-
-std::vector<Sounding> ChartFile::soundings() const
-{
-    return m_soundings;
-}
-
-std::vector<Area> ChartFile::builtUpAreas() const
-{
-    return m_builtUpAreas;
-}
-
 void ChartFile::read(const std::string &file)
 {
     std::unordered_map<int, std::shared_ptr<S57::VectorEdge>> vectorEdges;
@@ -83,21 +63,7 @@ void ChartFile::read(const std::string &file)
     }
 
     for (const std::shared_ptr<S57> &obj : s57Vector) {
-        if (obj->type() == S57::Type::LandArea) {
-            obj->buildGeometry(vectorEdges, connectedNodes);
-            if (!obj->area().isEmpty()) {
-                m_landArea += obj->area();
-            }
-        } else if (obj->type() == S57::Type::DepthArea) {
-            obj->buildGeometry(vectorEdges, connectedNodes);
-            m_depths.push_back(DepthArea(obj->depth(), obj->polygons()));
-        } else if (obj->type() == S57::Type::BuiltUpArea) {
-            obj->buildGeometry(vectorEdges, connectedNodes);
-            m_builtUpAreas.push_back(Area(obj->polygons()));
-        } else if (obj->type() == S57::Type::Sounding) {
-            Sounding sounding(obj->depths());
-            m_soundings.push_back(sounding);
-        }
+        obj->buildGeometry(vectorEdges, connectedNodes);
     }
 }
 
@@ -263,10 +229,10 @@ bool ChartFile::ingest200(const std::string &senc_file_name,
             if (attribute != S57::Attribute::Unknown) {
                 switch (attributeValueType) {
                 case 0: {
-                    // uint32_t val = pPayload->attribute_value_int;
-                    /* if (obj) {
-                        obj->AddIntegerAttribute( acronym.c_str(), (int)val );
-                    }*/
+                    const uint32_t val = pPayload->attribute_value_int;
+                    if (s57) {
+                        s57->setAttribute(attribute, static_cast<uint32_t>(val));
+                    }
                     break;
                 }
 
@@ -279,12 +245,9 @@ bool ChartFile::ingest200(const std::string &senc_file_name,
                 }
                 case 2: // Single double precision real
                 {
-                    double val = pPayload->attribute_value_double;
-                    // if(obj)
-                    // obj->AddDoubleAttribute( acronym.c_str(), val );
-                    // Just to get one of the depth values
-                    if (attribute == S57::Attribute::DepthValue1) {
-                        s57->setDepth(static_cast<float>(val));
+                    const double val = pPayload->attribute_value_double;
+                    if (s57) {
+                        s57->setAttribute(attribute, static_cast<float>(val));
                     }
                     break;
                 }
@@ -297,11 +260,10 @@ bool ChartFile::ingest200(const std::string &senc_file_name,
 
                 case 4: // Ascii String
                 {
-                    // char *val = (char *)&pPayload->attribute_value_char_ptr;
-                    /*if (obj) {
-                        obj->AddStringAttribute( acronym.c_str(), val );
-                    }*/
-
+                    const char *val = (char *)&pPayload->attribute_value_char_ptr;
+                    if (s57) {
+                        s57->setAttribute(attribute, std::string(val));
+                    }
                     break;
                 }
 
@@ -317,6 +279,12 @@ bool ChartFile::ingest200(const std::string &senc_file_name,
             unsigned char *buf = getBuffer(record.record_length - sizeof(OSENC_Record_Base));
             if (!fpx.Read(buf, record.record_length - sizeof(OSENC_Record_Base))) {
                 return false;
+            }
+
+            _OSENC_PointGeometry_Record_Payload *pPayload = (_OSENC_PointGeometry_Record_Payload *)buf;
+
+            if (s57) {
+                s57->setPointGeometry(Position(pPayload->lat, pPayload->lon));
             }
             break;
         }
@@ -365,7 +333,7 @@ bool ChartFile::ingest200(const std::string &senc_file_name,
                 return false;
             }
             OSENC_MultipointGeometry_Record_Payload *pPayload = (OSENC_MultipointGeometry_Record_Payload *)buf;
-            std::vector<Depth> depths;
+            std::vector<S57::PointGeometry> multiPointGeometry;
 
             float *pointTable = reinterpret_cast<float *>(&pPayload->payLoad);
 
@@ -376,10 +344,10 @@ bool ChartFile::ingest200(const std::string &senc_file_name,
                 const Position position = OpenCPN::fromSimpleMercator(easting,
                                                                       northing,
                                                                       m_extent.center());
-                depths.push_back(Depth(position, depth));
+                multiPointGeometry.push_back(S57::PointGeometry { position, depth });
             }
             if (s57 != nullptr) {
-                s57->setDepths(depths);
+                s57->setMultiPointGeometry(multiPointGeometry);
             }
             break;
         }

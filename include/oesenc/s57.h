@@ -1,9 +1,11 @@
 #pragma once
 
 #include <memory>
+#include <optional>
 #include <ostream>
 #include <string>
 #include <unordered_map>
+#include <variant>
 #include <vector>
 
 #include "area.h"
@@ -66,33 +68,102 @@ public:
     };
 
     enum class Type {
-        Unknown = 0,
-        LandArea,
-        DepthArea,
-        CoastLine,
+        Unknown,
+        AdministrationArea,
+        AnchorageArea,
+        BeaconIsolatedDanger,
+        Beacon,
+        BeaconLateral,
+        Bridge,
         BuiltUpArea,
+        BuoyLateral,
+        CableOverhead,
+        Canal,
+        CautionArea,
+        CoastLine,
+        ControlPoint,
+        DepthArea,
+        DepthContour,
+        CartographicLine,
+        Lake,
+        LandArea,
+        LandRegion,
+        Landmark,
+        Light,
+        NavigationLine,
+        Obstruction,
+        Pile,
+        PilotBoardingPlace,
+        Pipeline,
+        Pontoon,
+        Railway,
+        RecommendedTrack,
+        RestrictedArea,
+        River,
+        Road,
+        SeaArea,
+        SeabedArea,
+        ShorelineConstruction,
         Sounding,
+        StraightLineTerritorialSeaBaseline,
+        TerritorialSeaArea,
+        UnderwaterRock,
+        UnsurveyedArea,
+        Wreck,
+        Coverage,
+        NavigationalSystemOfMarks,
+        QualityOfData,
     };
 
     enum class Attribute {
-        Unknown = 0,
-        DepthValue1 = 1,
+        BeaconShape,
+        BuoyShape,
+        CategoryOfLateralMark,
+        CategoryOfRoad,
+        CategoryOfSpecialPurposeMark,
+        Colour,
+        DepthValue1,
+        Height,
+        LightCharacteristic,
+        MarkNavigationalSystem,
+        NatureOfSurface,
+        ObjectName,
+        ScaleMin,
+        SignalGroup,
+        SignalPeriod,
+        SourceDate,
+        SourceIndication,
+        Status,
+        ValueOfNominalRange,
+        ValueOfSounding,
+        WaterLevelEffect,
+        Unknown,
+    };
+
+    struct PointGeometry
+    {
+        Position position;
+        double value = 0;
     };
 
     S57(Type type);
     static Type fromTypeCode(int typeCode);
     static Attribute attributeFromTypeCode(int typeCode);
+    void setAttribute(Attribute attribute, std::variant<uint32_t, float, std::string> value);
+
+    template <typename T>
+    std::optional<T> attribute(Attribute attribute);
+
     void buildGeometry(const std::unordered_map<int, std::shared_ptr<S57::VectorEdge>> &vectorEdges,
                        const std::unordered_map<int, S57::ConnectedNode> &connectedNodes);
     void setLineGeometry(LineElement *elements, int length);
-    void setDepths(const std::vector<Depth> &depths);
-    void setDepth(float depth);
-    float depth() const;
-    std::vector<Depth> depths() const;
+    void setPointGeometry(const Position &position);
+    void setMultiPointGeometry(std::vector<PointGeometry> points);
+    std::optional<Position> pointGeometry() const;
+    std::vector<PointGeometry> multiPointGeometry() const { return m_multiPointGeometry; }
     std::vector<Polygon> polygons() const;
-    Area area() const;
-    Line line() const;
-    Type type() const;
+    const std::vector<std::vector<Position>> &lines() const { return m_lines; }
+    S57::Type type() const;
 
 private:
     void buildLine(const std::unordered_map<int, std::shared_ptr<S57::VectorEdge>> &vectorEdges,
@@ -100,12 +171,12 @@ private:
     void buildArea(const std::unordered_map<int, std::shared_ptr<S57::VectorEdge>> &vectorEdges,
                    const std::unordered_map<int, S57::ConnectedNode> &connectedNodes);
     std::unordered_map<unsigned int, LineElement> m_lineElements;
-    Area m_area;
-    Line m_line;
-    float m_depth = 0;
+    std::vector<std::vector<Position>> m_lines;
     Type m_type = Type::Unknown;
     std::vector<Polygon> m_polygons;
-    std::vector<Depth> m_depths;
+    std::vector<PointGeometry> m_multiPointGeometry;
+    Position m_pointGeometry;
+    std::unordered_map<Attribute, std::variant<uint32_t, float, std::string>> m_attributes;
 };
 
 std::ostream &operator<<(std::ostream &os, const S57::LineElement &e);

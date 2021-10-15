@@ -343,12 +343,6 @@ public:
     OESENC_EXPORT ChartFile();
     OESENC_EXPORT ~ChartFile();
     OESENC_EXPORT void read(const std::string &file);
-
-    OESENC_EXPORT Area landArea() const;
-    OESENC_EXPORT std::vector<Sounding> soundings() const;
-    OESENC_EXPORT std::vector<DepthArea> depths() const;
-    OESENC_EXPORT std::vector<Area> builtUpAreas() const;
-
     OESENC_EXPORT int getReadVersion() { return m_senc_file_read_version; }
     OESENC_EXPORT int getSencReadVersion() { return m_senc_file_read_version; }
     OESENC_EXPORT int getSENCReadLastUpdate() { return m_read_last_applied_update; }
@@ -387,10 +381,5 @@ private:
 
     unsigned char *pBuffer = nullptr;
     size_t bufferSize = 0;
-
     Rect m_extent;
-    Area m_landArea;
-    std::vector<Area> m_builtUpAreas;
-    std::vector<Sounding> m_soundings;
-    std::vector<DepthArea> m_depths;
 };
