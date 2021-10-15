@@ -12,7 +12,9 @@ Please support o-charts.org by purchasing your charts there. Do not share unencr
 
 ## Features
 
-For now just the basic data is read from the file: land areas, depth areas, and soundings. Land and depth area is polygon data and also the most complicated data to extract so adding support for new data less complicated.
+Many of the most common S57 types and attributes are available to be read. See [s-57.com](http://www.s-57.com/) to lookup the types you see in the code. In addition to attributes each S57 object may have geometric properties associated with it (a position, multiple positions with a value, lines and polygons). There are getters to fetch these geometric properties, but be aware that only a few object types have S57::buildGeometry() activated.
+
+This library is not responsible for parsing the information into a strictly typed data model (classes with strictly typed fields and so on). This is often application specific and is up to the user for library.
 
 ## Design
 
