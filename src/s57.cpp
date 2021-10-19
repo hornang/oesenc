@@ -159,6 +159,8 @@ S57::Attribute S57::attributeFromTypeCode(int typeCode)
         return S57::Attribute::BeaconShape;
     case 4:
         return S57::Attribute::BuoyShape;
+    case 18:
+        return S57::Attribute::CategoryOfCoverage;
     case 36:
         return S57::Attribute::CategoryOfLateralMark;
     case 57:
@@ -227,6 +229,7 @@ void S57::buildGeometry(const std::unordered_map<int, S57::VectorEdge> &vectorEd
     case S57::Type::LandArea:
     case S57::Type::DepthArea:
     case S57::Type::BuiltUpArea:
+    case S57::Type::Coverage:
         buildArea(vectorEdges, connectedNodes);
         break;
     case S57::Type::CoastLine:

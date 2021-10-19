@@ -121,6 +121,7 @@ public:
     enum class Attribute {
         BeaconShape,
         BuoyShape,
+        CategoryOfCoverage,
         CategoryOfLateralMark,
         CategoryOfRoad,
         CategoryOfSpecialPurposeMark,
