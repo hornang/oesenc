@@ -4,10 +4,8 @@
 #include <unordered_map>
 #include <vector>
 
-#include "deptharea.h"
 #include "rect.h"
 #include "s57.h"
-#include "sounding.h"
 
 #include "oesenc_export.h"
 

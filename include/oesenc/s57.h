@@ -8,9 +8,7 @@
 #include <variant>
 #include <vector>
 
-#include "area.h"
-#include "depth.h"
-#include "line.h"
+#include "polygon.h"
 #include "position.h"
 
 class S57
@@ -179,7 +177,7 @@ private:
     Type m_type = Type::Unknown;
     std::vector<Polygon> m_polygons;
     std::vector<PointGeometry> m_multiPointGeometry;
-    Position m_pointGeometry;
+    std::optional<Position> m_pointGeometry;
     std::unordered_map<Attribute, std::variant<uint32_t, float, std::string>> m_attributes;
 };
 

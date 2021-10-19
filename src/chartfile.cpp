@@ -6,7 +6,6 @@
 
 #include "oesenc/chartfile.h"
 #include "oesenc/chartreader.h"
-#include "oesenc/depth.h"
 #include "oesenc/opencpn.h"
 #include "oesenc/s57.h"
 

@@ -12,28 +12,18 @@ else()
 endif()
 
 add_library(oesenc
-    include/oesenc/area.h
     include/oesenc/chartfile.h
     include/oesenc/chartreader.h
-    include/oesenc/deptharea.h
-    include/oesenc/depth.h
-    include/oesenc/line.h
     include/oesenc/polygon.h
     include/oesenc/position.h
     include/oesenc/rect.h
     include/oesenc/s57.h
-    include/oesenc/sounding.h
-    src/area.cpp
     src/chartfile.cpp
-    src/deptharea.cpp
-    src/depth.cpp
-    src/line.cpp
     src/chartreader.cpp
     src/polygon.cpp
     src/position.cpp
     src/rect.cpp
     src/s57.cpp
-    src/sounding.cpp
     src/opencpn.cpp
 )
 

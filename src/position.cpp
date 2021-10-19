@@ -3,7 +3,6 @@
 Position::Position(double latitude, double longitude)
     : m_latitude(latitude)
     , m_longitude(longitude)
-    , m_valid(true)
 {
 }
 

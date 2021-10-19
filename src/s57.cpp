@@ -1,6 +1,5 @@
 ﻿#include <iostream>
 
-#include "oesenc/line.h"
 #include "oesenc/s57.h"
 
 std::ostream &operator<<(std::ostream &os, const S57::LineElement &e)
@@ -122,9 +121,6 @@ void S57::setPointGeometry(const Position &pointGeometry)
 
 std::optional<Position> S57::pointGeometry() const
 {
-    if (!m_pointGeometry.isValid()) {
-        return {};
-    }
     return m_pointGeometry;
 }
 
