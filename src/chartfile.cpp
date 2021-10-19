@@ -53,26 +53,23 @@ ChartFile::~ChartFile()
 
 bool ChartFile::read(const std::string &file)
 {
-    std::unordered_map<int, std::shared_ptr<S57::VectorEdge>> vectorEdges;
+    std::unordered_map<int, S57::VectorEdge> vectorEdges;
     std::unordered_map<int, S57::ConnectedNode> connectedNodes;
-    std::vector<std::shared_ptr<S57>> s57Vector;
 
-    if (!ingest200(file, s57Vector, vectorEdges, connectedNodes)) {
+    if (!ingest200(file, m_s57, vectorEdges, connectedNodes)) {
         std::cerr << "Failed to read";
         return false;
     }
 
-    for (const std::shared_ptr<S57> &obj : s57Vector) {
-        obj->buildGeometry(vectorEdges, connectedNodes);
+    for (S57 &obj : m_s57) {
+        obj.buildGeometry(vectorEdges, connectedNodes);
     }
-
-    m_s57 = s57Vector;
     return true;
 }
 
 bool ChartFile::ingest200(const std::string &senc_file_name,
-                          std::vector<std::shared_ptr<S57>> &s57Vector,
-                          std::unordered_map<int, std::shared_ptr<S57::VectorEdge>> &vectorEdges,
+                          std::vector<S57> &s57Vector,
+                          std::unordered_map<int, S57::VectorEdge> &vectorEdges,
                           std::unordered_map<int, S57::ConnectedNode> &connectedNodes)
 {
     ChartReader fpx;
@@ -81,7 +78,7 @@ bool ChartFile::ingest200(const std::string &senc_file_name,
         return false;
     }
 
-    std::shared_ptr<S57> s57;
+    S57 *s57 = nullptr;
 
     while (true) {
         OSENC_Record_Base record;
@@ -213,8 +210,8 @@ bool ChartFile::ingest200(const std::string &senc_file_name,
             }
             _OSENC_Feature_Identification_Record_Payload *pPayload = (_OSENC_Feature_Identification_Record_Payload *)buf;
             S57::Type typeCode = S57::fromTypeCode(pPayload->feature_type_code);
-            s57 = std::make_shared<S57>(typeCode);
-            s57Vector.push_back(s57);
+            s57Vector.push_back(S57(typeCode));
+            s57 = &(*std::prev(s57Vector.end()));
             break;
         }
 
@@ -377,7 +374,7 @@ bool ChartFile::ingest200(const std::string &senc_file_name,
                     std::memcpy(pPoints, pRun, pointCount * 2 * sizeof(float));
                 }
                 pRun += pointCount * 2 * sizeof(float);
-                std::shared_ptr<S57::VectorEdge> vectorEdge = std::make_shared<S57::VectorEdge>();
+                S57::VectorEdge vectorEdge;
                 std::vector<Position> positions;
                 Position ref = m_extent.center();
                 for (int i = 0; i < pointCount; i++) {
@@ -386,12 +383,12 @@ bool ChartFile::ingest200(const std::string &senc_file_name,
                                                                     ref));
                 }
                 free(pPoints);
-                vectorEdge->setPositions(positions);
+                vectorEdge.setPositions(positions);
                 // The index should be representable by a positive 32 bit integer
                 if (featureIndex > 0x7FFFFFFF) {
                     std::cerr << "Found bad vector edge index: " << featureIndex << std::endl;
                 } else {
-                    vectorEdges[featureIndex] = vectorEdge;
+                    vectorEdges[featureIndex] = std::move(vectorEdge);
                 }
             }
             break;

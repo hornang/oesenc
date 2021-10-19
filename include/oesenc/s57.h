@@ -19,6 +19,8 @@ public:
     class VectorEdge
     {
     public:
+        VectorEdge() = default;
+        VectorEdge(const VectorEdge &other) = delete;
         void setPositions(const std::vector<Position> &positions)
         {
             m_points = positions;
@@ -31,7 +33,7 @@ public:
                 m_points.push_back(position);
             }
         }
-        std::vector<Position> &positions()
+        const std::vector<Position> &positions() const
         {
             return m_points;
         }
@@ -43,12 +45,13 @@ public:
     class ConnectedNode
     {
     public:
-        ConnectedNode() { }
+        ConnectedNode() = default;
+        ConnectedNode(const ConnectedNode &other) = default;
         ConnectedNode(Position position)
             : m_position(position)
         {
         }
-        Position position() const { return m_position; }
+        const Position &position() const { return m_position; }
 
     private:
         Position m_position;
@@ -152,9 +155,9 @@ public:
     void setAttribute(Attribute attribute, std::variant<uint32_t, float, std::string> value);
 
     template <typename T>
-    std::optional<T> attribute(Attribute attribute);
+    std::optional<T> attribute(Attribute attribute) const;
 
-    void buildGeometry(const std::unordered_map<int, std::shared_ptr<S57::VectorEdge>> &vectorEdges,
+    void buildGeometry(const std::unordered_map<int, S57::VectorEdge> &vectorEdges,
                        const std::unordered_map<int, S57::ConnectedNode> &connectedNodes);
     void setLineGeometry(LineElement *elements, int length);
     void setPointGeometry(const Position &position);
@@ -166,9 +169,9 @@ public:
     S57::Type type() const;
 
 private:
-    void buildLine(const std::unordered_map<int, std::shared_ptr<S57::VectorEdge>> &vectorEdges,
+    void buildLine(const std::unordered_map<int, S57::VectorEdge> &vectorEdges,
                    const std::unordered_map<int, S57::ConnectedNode> &connectedNodes);
-    void buildArea(const std::unordered_map<int, std::shared_ptr<S57::VectorEdge>> &vectorEdges,
+    void buildArea(const std::unordered_map<int, S57::VectorEdge> &vectorEdges,
                    const std::unordered_map<int, S57::ConnectedNode> &connectedNodes);
     std::unordered_map<unsigned int, LineElement> m_lineElements;
     std::vector<std::vector<Position>> m_lines;

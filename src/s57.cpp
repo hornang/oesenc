@@ -134,13 +134,13 @@ void S57::setAttribute(Attribute attribute, std::variant<uint32_t, float, std::s
 }
 
 template <typename T>
-std::optional<T> S57::attribute(Attribute attribute)
+std::optional<T> S57::attribute(Attribute attribute) const
 {
     if (m_attributes.find(attribute) == m_attributes.end()) {
         return {};
     }
 
-    auto &value = m_attributes[attribute];
+    const auto &value = m_attributes.at(attribute);
 
     if (!std::holds_alternative<T>(value)) {
         return {};
@@ -148,9 +148,9 @@ std::optional<T> S57::attribute(Attribute attribute)
 
     return std::get<T>(value);
 }
-template std::optional<float> S57::attribute<float>(Attribute);
-template std::optional<uint32_t> S57::attribute<uint32_t>(Attribute);
-template std::optional<std::string> S57::attribute<std::string>(Attribute);
+template std::optional<float> S57::attribute<float>(Attribute) const;
+template std::optional<uint32_t> S57::attribute<uint32_t>(Attribute) const;
+template std::optional<std::string> S57::attribute<std::string>(Attribute) const;
 
 S57::Attribute S57::attributeFromTypeCode(int typeCode)
 {
@@ -220,7 +220,7 @@ void S57::setMultiPointGeometry(std::vector<PointGeometry> points)
     m_multiPointGeometry = points;
 }
 
-void S57::buildGeometry(const std::unordered_map<int, std::shared_ptr<S57::VectorEdge>> &vectorEdges,
+void S57::buildGeometry(const std::unordered_map<int, S57::VectorEdge> &vectorEdges,
                         const std::unordered_map<int, S57::ConnectedNode> &connectedNodes)
 {
     switch (m_type) {
@@ -238,7 +238,7 @@ void S57::buildGeometry(const std::unordered_map<int, std::shared_ptr<S57::Vecto
     }
 }
 
-void S57::buildLine(const std::unordered_map<int, std::shared_ptr<S57::VectorEdge>> &vectorEdges,
+void S57::buildLine(const std::unordered_map<int, S57::VectorEdge> &vectorEdges,
                     const std::unordered_map<int, S57::ConnectedNode> &connectedNodes)
 {
     if (m_lineElements.empty()) {
@@ -261,8 +261,8 @@ void S57::buildLine(const std::unordered_map<int, std::shared_ptr<S57::VectorEdg
         if (lineElement.edgeVector != 0) {
             auto vectorEdgeIt = vectorEdges.find(lineElement.edgeVector);
             if (vectorEdgeIt != vectorEdges.end()) {
-                std::shared_ptr<S57::VectorEdge> edge = vectorEdgeIt->second;
-                const std::vector<Position> &positions = edge->positions();
+                const S57::VectorEdge &edge = vectorEdgeIt->second;
+                const std::vector<Position> &positions = edge.positions();
                 if (line.size() == 0) {
                     std::cerr << "No first point?" << std::endl;
                 }
@@ -309,7 +309,7 @@ std::vector<Polygon> S57::polygons() const
     return m_polygons;
 }
 
-void S57::buildArea(const std::unordered_map<int, std::shared_ptr<S57::VectorEdge>> &vectorEdges,
+void S57::buildArea(const std::unordered_map<int, S57::VectorEdge> &vectorEdges,
                     const std::unordered_map<int, S57::ConnectedNode> &connectedNodes)
 {
     if (m_lineElements.empty()) {
@@ -333,8 +333,8 @@ void S57::buildArea(const std::unordered_map<int, std::shared_ptr<S57::VectorEdg
         if (lineElement.edgeVector != 0) {
             auto vectorEdgeIt = vectorEdges.find(lineElement.edgeVector);
             if (vectorEdgeIt != vectorEdges.end()) {
-                const std::shared_ptr<S57::VectorEdge> edge = vectorEdgeIt->second;
-                const std::vector<Position> &positions = edge->positions();
+                const S57::VectorEdge &edge = vectorEdgeIt->second;
+                const std::vector<Position> &positions = edge.positions();
 
                 if (lineElement.direction == S57::Direction::Reverse) {
                     polygonPositions.insert(polygonPositions.end(), positions.rbegin(), positions.rend());

@@ -357,12 +357,12 @@ public:
 
     OESENC_EXPORT void InitializePersistentBuffer(void);
     OESENC_EXPORT unsigned char *getBuffer(size_t length);
-    OESENC_EXPORT const std::vector<std::shared_ptr<S57>> &s57() const { return m_s57; }
+    OESENC_EXPORT const std::vector<S57> &s57() const { return m_s57; }
 
 private:
     bool ingest200(const std::string &senc_file_name,
-                   std::vector<std::shared_ptr<S57>> &s57Vector,
-                   std::unordered_map<int, std::shared_ptr<S57::VectorEdge>> &vectorEdges,
+                   std::vector<S57> &s57Vector,
+                   std::unordered_map<int, S57::VectorEdge> &vectorEdges,
                    std::unordered_map<int, S57::ConnectedNode> &connectedNodes);
     uint8_t *skipTessellationData(_OSENC_AreaGeometry_Record_Payload *record);
     std::string m_Name;
@@ -383,5 +383,5 @@ private:
     unsigned char *pBuffer = nullptr;
     size_t bufferSize = 0;
     Rect m_extent;
-    std::vector<std::shared_ptr<S57>> m_s57;
+    std::vector<S57> m_s57;
 };
