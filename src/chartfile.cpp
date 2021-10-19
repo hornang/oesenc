@@ -428,6 +428,7 @@ bool ChartFile::ingest200(const std::string &senc_file_name,
                 S57::ConnectedNode connectedNode(OpenCPN::fromSimpleMercator(pPoint[0],
                                                                              pPoint[1],
                                                                              m_extent.center()));
+                free(pPoint); // Fix this in a proper way
                 connectedNodes[featureIndex] = connectedNode;
             }
             break;
