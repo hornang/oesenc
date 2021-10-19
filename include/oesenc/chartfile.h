@@ -340,44 +340,42 @@ typedef struct _OSENC_EXTENT_Record_Payload
 class ChartFile
 {
 public:
-    OESENC_EXPORT ChartFile();
+    OESENC_EXPORT ChartFile(const std::string &filename);
     OESENC_EXPORT ~ChartFile();
-    OESENC_EXPORT bool read(const std::string &file);
+    OESENC_EXPORT bool readHeaders();
+    OESENC_EXPORT bool read();
     OESENC_EXPORT int getReadVersion() { return m_senc_file_read_version; }
     OESENC_EXPORT int getSencReadVersion() { return m_senc_file_read_version; }
     OESENC_EXPORT int getSENCReadLastUpdate() { return m_read_last_applied_update; }
-    OESENC_EXPORT int getSENCReadScale() { return m_Chart_Scale; }
     OESENC_EXPORT std::string getUpdateDate() { return m_LastUpdateDate; }
     OESENC_EXPORT std::string getBaseDate() { return m_sdate000; }
     OESENC_EXPORT std::string getReadName() { return m_Name; }
     OESENC_EXPORT std::string getSoundingsDatumString() { return m_SoundingDatum; }
-
-    OESENC_EXPORT Rect &getReadExtent() { return m_extent; }
     OESENC_EXPORT Rect extent() const { return m_extent; }
-
-    OESENC_EXPORT void InitializePersistentBuffer(void);
-    OESENC_EXPORT unsigned char *getBuffer(size_t length);
+    OESENC_EXPORT int nativeScale() const { return m_nativeScale; }
     OESENC_EXPORT const std::vector<S57> &s57() const { return m_s57; }
 
 private:
     bool ingest200(const std::string &senc_file_name,
                    std::vector<S57> &s57Vector,
                    std::unordered_map<int, S57::VectorEdge> &vectorEdges,
-                   std::unordered_map<int, S57::ConnectedNode> &connectedNodes);
+                   std::unordered_map<int, S57::ConnectedNode> &connectedNodes,
+                   bool headersOnly = false);
+    unsigned char *getBuffer(size_t length);
     uint8_t *skipTessellationData(_OSENC_AreaGeometry_Record_Payload *record);
+    std::string m_filename;
     std::string m_Name;
     std::string m_sdate000;
     std::string m_LastUpdateDate;
     std::string m_key;
     std::string m_SoundingDatum;
 
-    int m_Chart_Scale = 0;
     int m_senc_file_read_version = 0;
     int m_senc_file_create_version = 0;
     int m_nGeoRecords = 0;
     int m_last_applied_update = 0;
     int m_read_last_applied_update = 0;
-    int m_native_scale = 0;
+    int m_nativeScale = 0;
     int m_read_base = 0;
 
     unsigned char *pBuffer = nullptr;

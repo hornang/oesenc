@@ -25,3 +25,8 @@ bool ChartReader::Read(void *buffer, size_t size)
     }
     return result;
 }
+
+void ChartReader::close()
+{
+    m_file.close();
+}

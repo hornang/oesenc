@@ -40,7 +40,8 @@
 #define CELL_EXTENT_RECORD 100
 #define CELL_TXTDSC_INFO_FILE_RECORD 101
 
-ChartFile::ChartFile()
+ChartFile::ChartFile(const std::string &filename)
+    : m_filename(filename)
 {
 }
 
@@ -51,13 +52,25 @@ ChartFile::~ChartFile()
     }
 }
 
-bool ChartFile::read(const std::string &file)
+bool ChartFile::readHeaders()
 {
     std::unordered_map<int, S57::VectorEdge> vectorEdges;
     std::unordered_map<int, S57::ConnectedNode> connectedNodes;
 
-    if (!ingest200(file, m_s57, vectorEdges, connectedNodes)) {
-        std::cerr << "Failed to read";
+    if (!ingest200(m_filename, m_s57, vectorEdges, connectedNodes, true)) {
+        std::cerr << "Failed to read" << std::endl;
+        return false;
+    }
+    return true;
+}
+
+bool ChartFile::read()
+{
+    std::unordered_map<int, S57::VectorEdge> vectorEdges;
+    std::unordered_map<int, S57::ConnectedNode> connectedNodes;
+
+    if (!ingest200(m_filename, m_s57, vectorEdges, connectedNodes)) {
+        std::cerr << "Failed to read" << std::endl;
         return false;
     }
 
@@ -70,7 +83,8 @@ bool ChartFile::read(const std::string &file)
 bool ChartFile::ingest200(const std::string &senc_file_name,
                           std::vector<S57> &s57Vector,
                           std::unordered_map<int, S57::VectorEdge> &vectorEdges,
-                          std::unordered_map<int, S57::ConnectedNode> &connectedNodes)
+                          std::unordered_map<int, S57::ConnectedNode> &connectedNodes,
+                          bool headersOnly)
 {
     ChartReader fpx;
 
@@ -154,7 +168,7 @@ bool ChartFile::ingest200(const std::string &senc_file_name,
                 return false;
             }
             uint32_t *pint = (uint32_t *)buf;
-            m_Chart_Scale = *pint;
+            m_nativeScale = *pint;
             break;
         }
 
@@ -204,6 +218,10 @@ bool ChartFile::ingest200(const std::string &senc_file_name,
         }
 
         case FEATURE_ID_RECORD: {
+            if (headersOnly) {
+                fpx.close();
+                return true;
+            }
             unsigned char *buf = getBuffer(record.record_length - sizeof(OSENC_Record_Base));
             if (!fpx.Read(buf, record.record_length - sizeof(OSENC_Record_Base))) {
                 return false;
@@ -452,6 +470,7 @@ bool ChartFile::ingest200(const std::string &senc_file_name,
             break;
         }
     }
+    fpx.close();
     return true;
 }
 
