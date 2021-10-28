@@ -10,9 +10,9 @@ static const double mercator_k0 = 0.9996;
 
 #define DEGREE (M_PI / 180.0)
 
-Position OpenCPN::fromSimpleMercator(double x,
-                                     double y,
-                                     const Position &reference)
+oesenc::Position OpenCPN::fromSimpleMercator(double x,
+                                             double y,
+                                             const oesenc::Position &reference)
 {
     const double z = WGS84_semimajor_axis_meters * mercator_k0;
 
@@ -38,5 +38,5 @@ Position OpenCPN::fromSimpleMercator(double x,
     // lon = x + lon0
     double lon = lon0 + (x / (DEGREE * z));
 
-    return Position(lat, lon);
+    return oesenc::Position(lat, lon);
 }

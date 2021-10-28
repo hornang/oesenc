@@ -6,6 +6,8 @@
 
 #include "oesenc_export.h"
 
+namespace oesenc {
+
 class OESENC_EXPORT Position
 {
 public:
@@ -25,4 +27,6 @@ private:
     double m_longitude = 0;
 };
 
-std::ostream &operator<<(std::ostream &os, const Position &position);
+};
+
+std::ostream &operator<<(std::ostream &os, const oesenc::Position &position);

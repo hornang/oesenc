@@ -2,6 +2,8 @@
 
 #include "oesenc/s57.h"
 
+using namespace oesenc;
+
 std::ostream &operator<<(std::ostream &os, const S57::LineElement &e)
 {
     if (e.direction == S57::Direction::Forward) {

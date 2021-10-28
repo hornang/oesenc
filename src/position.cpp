@@ -1,5 +1,7 @@
 #include "oesenc/position.h"
 
+using namespace oesenc;
+
 Position::Position(double latitude, double longitude)
     : m_latitude(latitude)
     , m_longitude(longitude)

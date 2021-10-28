@@ -1,5 +1,7 @@
 #include "oesenc/rect.h"
 
+using namespace oesenc;
+
 Rect::Rect()
 {
 }

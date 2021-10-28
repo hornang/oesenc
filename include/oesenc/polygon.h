@@ -5,6 +5,8 @@
 
 #include "oesenc_export.h"
 
+namespace oesenc {
+
 class Polygon
 {
 public:
@@ -15,4 +17,5 @@ public:
 
 private:
     std::vector<Position> m_positions;
+};
 };

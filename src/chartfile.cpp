@@ -39,6 +39,8 @@
 #define CELL_EXTENT_RECORD 100
 #define CELL_TXTDSC_INFO_FILE_RECORD 101
 
+using namespace oesenc;
+
 ChartFile::ChartFile(const std::string &filename)
     : m_filename(filename)
 {

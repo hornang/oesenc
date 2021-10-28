@@ -11,6 +11,8 @@
 #include "polygon.h"
 #include "position.h"
 
+namespace oesenc {
+
 class S57
 {
 public:
@@ -19,7 +21,7 @@ public:
     public:
         VectorEdge() = default;
         VectorEdge(const VectorEdge &other) = delete;
-        void setPositions(const std::vector<Position> &positions)
+        void setPositions(const std::vector<oesenc::Position> &positions)
         {
             m_points = positions;
         }
@@ -27,17 +29,17 @@ public:
         void setPoints(float *points, int nPoints)
         {
             for (int i = 0; i < nPoints; i++) {
-                Position position(points[i * 2 + 1], points[i * 2]);
+                oesenc::Position position(points[i * 2 + 1], points[i * 2]);
                 m_points.push_back(position);
             }
         }
-        const std::vector<Position> &positions() const
+        const std::vector<oesenc::Position> &positions() const
         {
             return m_points;
         }
 
     private:
-        std::vector<Position> m_points;
+        std::vector<oesenc::Position> m_points;
     };
 
     class ConnectedNode
@@ -45,14 +47,14 @@ public:
     public:
         ConnectedNode() = default;
         ConnectedNode(const ConnectedNode &other) = default;
-        ConnectedNode(Position position)
+        ConnectedNode(oesenc::Position position)
             : m_position(position)
         {
         }
-        const Position &position() const { return m_position; }
+        const oesenc::Position &position() const { return m_position; }
 
     private:
-        Position m_position;
+        oesenc::Position m_position;
     };
 
     enum class Direction {
@@ -124,6 +126,7 @@ public:
         CategoryOfRoad,
         CategoryOfSpecialPurposeMark,
         Colour,
+        ColourPattern,
         DepthValue1,
         Height,
         LightCharacteristic,
@@ -144,7 +147,7 @@ public:
 
     struct PointGeometry
     {
-        Position position;
+        oesenc::Position position;
         double value = 0;
     };
 
@@ -159,12 +162,12 @@ public:
     void buildGeometry(const std::unordered_map<int, S57::VectorEdge> &vectorEdges,
                        const std::unordered_map<int, S57::ConnectedNode> &connectedNodes);
     void setLineGeometry(LineElement *elements, int length);
-    void setPointGeometry(const Position &position);
+    void setPointGeometry(const oesenc::Position &position);
     void setMultiPointGeometry(std::vector<PointGeometry> points);
-    std::optional<Position> pointGeometry() const;
+    std::optional<oesenc::Position> pointGeometry() const;
     std::vector<PointGeometry> multiPointGeometry() const { return m_multiPointGeometry; }
-    std::vector<Polygon> polygons() const;
-    const std::vector<std::vector<Position>> &lines() const { return m_lines; }
+    std::vector<oesenc::Polygon> polygons() const;
+    const std::vector<std::vector<oesenc::Position>> &lines() const { return m_lines; }
     S57::Type type() const;
 
 private:
@@ -173,12 +176,13 @@ private:
     void buildArea(const std::unordered_map<int, S57::VectorEdge> &vectorEdges,
                    const std::unordered_map<int, S57::ConnectedNode> &connectedNodes);
     std::unordered_map<unsigned int, LineElement> m_lineElements;
-    std::vector<std::vector<Position>> m_lines;
+    std::vector<std::vector<oesenc::Position>> m_lines;
     Type m_type = Type::Unknown;
-    std::vector<Polygon> m_polygons;
+    std::vector<oesenc::Polygon> m_polygons;
     std::vector<PointGeometry> m_multiPointGeometry;
-    std::optional<Position> m_pointGeometry;
+    std::optional<oesenc::Position> m_pointGeometry;
     std::unordered_map<Attribute, std::variant<uint32_t, float, std::string>> m_attributes;
 };
 
-std::ostream &operator<<(std::ostream &os, const S57::LineElement &e);
+};
+std::ostream &operator<<(std::ostream &os, const oesenc::S57::LineElement &e);

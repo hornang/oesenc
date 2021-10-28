@@ -3,7 +3,7 @@
 #include "oesenc/position.h"
 
 namespace OpenCPN {
-Position fromSimpleMercator(double x,
-                            double y,
-                            const Position &reference);
+oesenc::Position fromSimpleMercator(double x,
+                                    double y,
+                                    const oesenc::Position &reference);
 }

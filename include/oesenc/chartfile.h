@@ -335,6 +335,8 @@ typedef struct _OSENC_EXTENT_Record_Payload
 
 #pragma pack(pop)
 
+namespace oesenc {
+
 class ChartFile
 {
 public:
@@ -380,4 +382,6 @@ private:
     size_t bufferSize = 0;
     Rect m_extent;
     std::vector<S57> m_s57;
+};
+
 };
