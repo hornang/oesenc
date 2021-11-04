@@ -337,10 +337,13 @@ typedef struct _OSENC_EXTENT_Record_Payload
 
 namespace oesenc {
 
+class IReader;
+
 class ChartFile
 {
 public:
     OESENC_EXPORT ChartFile(const std::string &filename);
+    OESENC_EXPORT ChartFile(const std::vector<std::byte> &data);
     OESENC_EXPORT ~ChartFile();
     OESENC_EXPORT bool readHeaders();
     OESENC_EXPORT bool read();
@@ -356,13 +359,15 @@ public:
     OESENC_EXPORT const std::vector<S57> &s57() const { return m_s57; }
 
 private:
-    bool ingest200(const std::string &senc_file_name,
+    bool ingest200(IReader *reader,
                    std::vector<S57> &s57Vector,
                    std::unordered_map<int, S57::VectorEdge> &vectorEdges,
                    std::unordered_map<int, S57::ConnectedNode> &connectedNodes,
                    bool headersOnly = false);
     unsigned char *getBuffer(size_t length);
     uint8_t *skipTessellationData(_OSENC_AreaGeometry_Record_Payload *record);
+
+    std::vector<std::byte> m_data;
     std::string m_filename;
     std::string m_Name;
     std::string m_sdate000;
@@ -381,6 +386,7 @@ private:
     unsigned char *pBuffer = nullptr;
     size_t bufferSize = 0;
     Rect m_extent;
+    std::shared_ptr<IReader> m_reader;
     std::vector<S57> m_s57;
 };
 

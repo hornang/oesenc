@@ -13,18 +13,21 @@ endif()
 
 add_library(oesenc
     include/oesenc/chartfile.h
-    include/oesenc/chartreader.h
     include/oesenc/polygon.h
     include/oesenc/position.h
     include/oesenc/rect.h
     include/oesenc/s57.h
     src/chartfile.cpp
-    src/chartreader.cpp
+    src/filereader.h
+    src/filereader.cpp
+    src/opencpn.cpp
     src/polygon.cpp
     src/position.cpp
+    src/vectorreader.h
+    src/vectorreader.cpp
+    src/reader.h
     src/rect.cpp
     src/s57.cpp
-    src/opencpn.cpp
 )
 
 include(GenerateExportHeader)

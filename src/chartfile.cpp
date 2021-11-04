@@ -4,10 +4,11 @@
 #include <memory>
 #include <unordered_map>
 
+#include "filereader.h"
 #include "oesenc/chartfile.h"
-#include "oesenc/chartreader.h"
 #include "oesenc/opencpn.h"
 #include "oesenc/s57.h"
+#include "vectorreader.h"
 
 #define HEADER_SENC_VERSION 1
 #define HEADER_CELL_NAME 2
@@ -44,6 +45,13 @@ using namespace oesenc;
 ChartFile::ChartFile(const std::string &filename)
     : m_filename(filename)
 {
+    m_reader = std::make_shared<FileReader>(m_filename);
+}
+
+ChartFile::ChartFile(const std::vector<std::byte> &data)
+    : m_data(data)
+{
+    m_reader = std::make_shared<VectorReader>(data);
 }
 
 ChartFile::~ChartFile()
@@ -58,7 +66,7 @@ bool ChartFile::readHeaders()
     std::unordered_map<int, S57::VectorEdge> vectorEdges;
     std::unordered_map<int, S57::ConnectedNode> connectedNodes;
 
-    if (!ingest200(m_filename, m_s57, vectorEdges, connectedNodes, true)) {
+    if (!ingest200(m_reader.get(), m_s57, vectorEdges, connectedNodes, true)) {
         std::cerr << "Failed to read" << std::endl;
         return false;
     }
@@ -70,7 +78,7 @@ bool ChartFile::read()
     std::unordered_map<int, S57::VectorEdge> vectorEdges;
     std::unordered_map<int, S57::ConnectedNode> connectedNodes;
 
-    if (!ingest200(m_filename, m_s57, vectorEdges, connectedNodes)) {
+    if (!ingest200(m_reader.get(), m_s57, vectorEdges, connectedNodes)) {
         std::cerr << "Failed to read" << std::endl;
         return false;
     }
@@ -81,15 +89,13 @@ bool ChartFile::read()
     return true;
 }
 
-bool ChartFile::ingest200(const std::string &senc_file_name,
+bool ChartFile::ingest200(IReader *fpx,
                           std::vector<S57> &s57Vector,
                           std::unordered_map<int, S57::VectorEdge> &vectorEdges,
                           std::unordered_map<int, S57::ConnectedNode> &connectedNodes,
                           bool headersOnly)
 {
-    ChartReader fpx;
-
-    if (!fpx.Open(senc_file_name)) {
+    if (!fpx->open()) {
         return false;
     }
 
@@ -97,14 +103,14 @@ bool ChartFile::ingest200(const std::string &senc_file_name,
 
     while (true) {
         OSENC_Record_Base record;
-        if (!fpx.Read(&record, sizeof(OSENC_Record_Base))) {
+        if (!fpx->read(&record, sizeof(OSENC_Record_Base))) {
             break;
         }
 
         switch (record.record_type) {
         case HEADER_SENC_VERSION: {
             unsigned char *buf = getBuffer(record.record_length - sizeof(OSENC_Record_Base));
-            if (!fpx.Read(buf, record.record_length - sizeof(OSENC_Record_Base))) {
+            if (!fpx->read(buf, record.record_length - sizeof(OSENC_Record_Base))) {
                 return false;
             }
             uint16_t *pint = (uint16_t *)buf;
@@ -119,7 +125,7 @@ bool ChartFile::ingest200(const std::string &senc_file_name,
         }
         case HEADER_CELL_NAME: {
             unsigned char *buf = getBuffer(record.record_length - sizeof(OSENC_Record_Base));
-            if (!fpx.Read(buf, record.record_length - sizeof(OSENC_Record_Base))) {
+            if (!fpx->read(buf, record.record_length - sizeof(OSENC_Record_Base))) {
                 return false;
             }
             m_Name = reinterpret_cast<const char *>(buf);
@@ -127,7 +133,7 @@ bool ChartFile::ingest200(const std::string &senc_file_name,
         }
         case HEADER_CELL_PUBLISHDATE: {
             unsigned char *buf = getBuffer(record.record_length - sizeof(OSENC_Record_Base));
-            if (!fpx.Read(buf, record.record_length - sizeof(OSENC_Record_Base))) {
+            if (!fpx->read(buf, record.record_length - sizeof(OSENC_Record_Base))) {
                 return false;
             }
             m_sdate000 = reinterpret_cast<const char *>(buf);
@@ -136,7 +142,7 @@ bool ChartFile::ingest200(const std::string &senc_file_name,
 
         case HEADER_CELL_EDITION: {
             unsigned char *buf = getBuffer(record.record_length - sizeof(OSENC_Record_Base));
-            if (!fpx.Read(buf, record.record_length - sizeof(OSENC_Record_Base))) {
+            if (!fpx->read(buf, record.record_length - sizeof(OSENC_Record_Base))) {
                 return false;
             }
             uint16_t *pint = (uint16_t *)buf;
@@ -146,7 +152,7 @@ bool ChartFile::ingest200(const std::string &senc_file_name,
 
         case HEADER_CELL_UPDATEDATE: {
             unsigned char *buf = getBuffer(record.record_length - sizeof(OSENC_Record_Base));
-            if (!fpx.Read(buf, record.record_length - sizeof(OSENC_Record_Base))) {
+            if (!fpx->read(buf, record.record_length - sizeof(OSENC_Record_Base))) {
                 return false;
             }
             m_LastUpdateDate = reinterpret_cast<const char *>(buf);
@@ -155,7 +161,7 @@ bool ChartFile::ingest200(const std::string &senc_file_name,
 
         case HEADER_CELL_UPDATE: {
             unsigned char *buf = getBuffer(record.record_length - sizeof(OSENC_Record_Base));
-            if (!fpx.Read(buf, record.record_length - sizeof(OSENC_Record_Base))) {
+            if (!fpx->read(buf, record.record_length - sizeof(OSENC_Record_Base))) {
                 return false;
             }
             uint16_t *pint = (uint16_t *)buf;
@@ -165,7 +171,7 @@ bool ChartFile::ingest200(const std::string &senc_file_name,
 
         case HEADER_CELL_NATIVESCALE: {
             unsigned char *buf = getBuffer(record.record_length - sizeof(OSENC_Record_Base));
-            if (!fpx.Read(buf, record.record_length - sizeof(OSENC_Record_Base))) {
+            if (!fpx->read(buf, record.record_length - sizeof(OSENC_Record_Base))) {
                 return false;
             }
             uint32_t *pint = (uint32_t *)buf;
@@ -175,7 +181,7 @@ bool ChartFile::ingest200(const std::string &senc_file_name,
 
         case HEADER_CELL_SOUNDINGDATUM: {
             unsigned char *buf = getBuffer(record.record_length - sizeof(OSENC_Record_Base));
-            if (!fpx.Read(buf, record.record_length - sizeof(OSENC_Record_Base))) {
+            if (!fpx->read(buf, record.record_length - sizeof(OSENC_Record_Base))) {
                 return false;
             }
             m_SoundingDatum = reinterpret_cast<const char *>(buf);
@@ -184,7 +190,7 @@ bool ChartFile::ingest200(const std::string &senc_file_name,
 
         case HEADER_CELL_SENCCREATEDATE: {
             unsigned char *buf = getBuffer(record.record_length - sizeof(OSENC_Record_Base));
-            if (!fpx.Read(buf, record.record_length - sizeof(OSENC_Record_Base))) {
+            if (!fpx->read(buf, record.record_length - sizeof(OSENC_Record_Base))) {
                 return false;
             }
             break;
@@ -192,7 +198,7 @@ bool ChartFile::ingest200(const std::string &senc_file_name,
 
         case CELL_EXTENT_RECORD: {
             unsigned char *buf = getBuffer(record.record_length - sizeof(OSENC_Record_Base));
-            if (!fpx.Read(buf, record.record_length - sizeof(OSENC_Record_Base))) {
+            if (!fpx->read(buf, record.record_length - sizeof(OSENC_Record_Base))) {
                 return false;
             }
             _OSENC_EXTENT_Record_Payload *pPayload = (_OSENC_EXTENT_Record_Payload *)buf;
@@ -204,7 +210,7 @@ bool ChartFile::ingest200(const std::string &senc_file_name,
 
         case CELL_COVR_RECORD: {
             unsigned char *buf = getBuffer(record.record_length - sizeof(OSENC_Record_Base));
-            if (!fpx.Read(buf, record.record_length - sizeof(OSENC_Record_Base))) {
+            if (!fpx->read(buf, record.record_length - sizeof(OSENC_Record_Base))) {
                 return false;
             }
             break;
@@ -212,7 +218,7 @@ bool ChartFile::ingest200(const std::string &senc_file_name,
 
         case CELL_NOCOVR_RECORD: {
             unsigned char *buf = getBuffer(record.record_length - sizeof(OSENC_Record_Base));
-            if (!fpx.Read(buf, record.record_length - sizeof(OSENC_Record_Base))) {
+            if (!fpx->read(buf, record.record_length - sizeof(OSENC_Record_Base))) {
                 return false;
             }
             break;
@@ -220,11 +226,11 @@ bool ChartFile::ingest200(const std::string &senc_file_name,
 
         case FEATURE_ID_RECORD: {
             if (headersOnly) {
-                fpx.close();
+                fpx->close();
                 return true;
             }
             unsigned char *buf = getBuffer(record.record_length - sizeof(OSENC_Record_Base));
-            if (!fpx.Read(buf, record.record_length - sizeof(OSENC_Record_Base))) {
+            if (!fpx->read(buf, record.record_length - sizeof(OSENC_Record_Base))) {
                 return false;
             }
             _OSENC_Feature_Identification_Record_Payload *pPayload = (_OSENC_Feature_Identification_Record_Payload *)buf;
@@ -236,7 +242,7 @@ bool ChartFile::ingest200(const std::string &senc_file_name,
 
         case FEATURE_ATTRIBUTE_RECORD: {
             unsigned char *buf = getBuffer(record.record_length - sizeof(OSENC_Record_Base));
-            if (!fpx.Read(buf, record.record_length - sizeof(OSENC_Record_Base))) {
+            if (!fpx->read(buf, record.record_length - sizeof(OSENC_Record_Base))) {
                 return false;
             }
             OSENC_Attribute_Record_Payload *pPayload = (OSENC_Attribute_Record_Payload *)buf;
@@ -296,7 +302,7 @@ bool ChartFile::ingest200(const std::string &senc_file_name,
 
         case FEATURE_GEOMETRY_RECORD_POINT: {
             unsigned char *buf = getBuffer(record.record_length - sizeof(OSENC_Record_Base));
-            if (!fpx.Read(buf, record.record_length - sizeof(OSENC_Record_Base))) {
+            if (!fpx->read(buf, record.record_length - sizeof(OSENC_Record_Base))) {
                 return false;
             }
 
@@ -310,7 +316,7 @@ bool ChartFile::ingest200(const std::string &senc_file_name,
 
         case FEATURE_GEOMETRY_RECORD_AREA: {
             unsigned char *buf = getBuffer(record.record_length - sizeof(OSENC_Record_Base));
-            if (!fpx.Read(buf, record.record_length - sizeof(OSENC_Record_Base))) {
+            if (!fpx->read(buf, record.record_length - sizeof(OSENC_Record_Base))) {
                 return false;
             }
             _OSENC_AreaGeometry_Record_Payload *pPayload = (_OSENC_AreaGeometry_Record_Payload *)buf;
@@ -327,7 +333,7 @@ bool ChartFile::ingest200(const std::string &senc_file_name,
 
         case FEATURE_GEOMETRY_RECORD_AREA_EXT: {
             unsigned char *buf = getBuffer(record.record_length - sizeof(OSENC_Record_Base));
-            if (!fpx.Read(buf, record.record_length - sizeof(OSENC_Record_Base))) {
+            if (!fpx->read(buf, record.record_length - sizeof(OSENC_Record_Base))) {
                 return false;
             }
             break;
@@ -335,7 +341,7 @@ bool ChartFile::ingest200(const std::string &senc_file_name,
 
         case FEATURE_GEOMETRY_RECORD_LINE: {
             unsigned char *buf = getBuffer(record.record_length - sizeof(OSENC_Record_Base));
-            if (!fpx.Read(buf, record.record_length - sizeof(OSENC_Record_Base))) {
+            if (!fpx->read(buf, record.record_length - sizeof(OSENC_Record_Base))) {
                 return false;
             }
             _OSENC_LineGeometry_Record_Payload *pPayload = (_OSENC_LineGeometry_Record_Payload *)buf;
@@ -348,7 +354,7 @@ bool ChartFile::ingest200(const std::string &senc_file_name,
 
         case FEATURE_GEOMETRY_RECORD_MULTIPOINT: {
             unsigned char *buf = getBuffer(record.record_length - sizeof(OSENC_Record_Base));
-            if (!fpx.Read(buf, record.record_length - sizeof(OSENC_Record_Base))) {
+            if (!fpx->read(buf, record.record_length - sizeof(OSENC_Record_Base))) {
                 return false;
             }
             OSENC_MultipointGeometry_Record_Payload *pPayload = (OSENC_MultipointGeometry_Record_Payload *)buf;
@@ -373,7 +379,7 @@ bool ChartFile::ingest200(const std::string &senc_file_name,
 
         case VECTOR_EDGE_NODE_TABLE_RECORD: {
             unsigned char *buf = getBuffer(record.record_length - sizeof(OSENC_Record_Base));
-            if (!fpx.Read(buf, record.record_length - sizeof(OSENC_Record_Base))) {
+            if (!fpx->read(buf, record.record_length - sizeof(OSENC_Record_Base))) {
                 return false;
             }
             uint8_t *pRun = (uint8_t *)buf;
@@ -415,7 +421,7 @@ bool ChartFile::ingest200(const std::string &senc_file_name,
 
         case VECTOR_EDGE_NODE_TABLE_EXT_RECORD: {
             unsigned char *buf = getBuffer(record.record_length - sizeof(OSENC_Record_Base));
-            if (!fpx.Read(buf, record.record_length - sizeof(OSENC_Record_Base))) {
+            if (!fpx->read(buf, record.record_length - sizeof(OSENC_Record_Base))) {
                 return false;
             }
             break;
@@ -424,7 +430,7 @@ bool ChartFile::ingest200(const std::string &senc_file_name,
         case VECTOR_CONNECTED_NODE_TABLE_RECORD: {
             long unsigned int buf_len = record.record_length - sizeof(OSENC_Record_Base);
             unsigned char *buf = getBuffer(buf_len);
-            if (!fpx.Read(buf, buf_len)) {
+            if (!fpx->read(buf, buf_len)) {
                 return false;
             }
 
@@ -455,7 +461,7 @@ bool ChartFile::ingest200(const std::string &senc_file_name,
 
         case CELL_TXTDSC_INFO_FILE_RECORD: {
             unsigned char *buf = getBuffer(record.record_length - sizeof(OSENC_Record_Base));
-            if (!fpx.Read(buf, record.record_length - sizeof(OSENC_Record_Base))) {
+            if (!fpx->read(buf, record.record_length - sizeof(OSENC_Record_Base))) {
                 return false;
             }
             break;
@@ -471,7 +477,7 @@ bool ChartFile::ingest200(const std::string &senc_file_name,
             break;
         }
     }
-    fpx.close();
+    fpx->close();
     return true;
 }
 

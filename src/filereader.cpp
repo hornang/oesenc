@@ -1,8 +1,15 @@
-#include "oesenc/chartreader.h"
+#include <iostream>
 
-bool ChartReader::Open(const std::string &fileName)
+#include "filereader.h"
+
+FileReader::FileReader(const std::string &fileName)
+    : m_fileName(fileName)
 {
-    m_file = std::ifstream(fileName, std::ios::binary);
+}
+
+bool FileReader::open()
+{
+    m_file = std::ifstream(m_fileName, std::ios::binary);
 
     if (!m_file.is_open()) {
         std::cout << "Unable to open file" << std::endl;
@@ -12,7 +19,7 @@ bool ChartReader::Open(const std::string &fileName)
     return true;
 }
 
-bool ChartReader::Read(void *buffer, size_t size)
+bool FileReader::read(void *buffer, size_t size)
 {
     if (!m_file.is_open()) {
         std::cerr << "File not open" << std::endl;
@@ -26,7 +33,7 @@ bool ChartReader::Read(void *buffer, size_t size)
     return result;
 }
 
-void ChartReader::close()
+void FileReader::close()
 {
     m_file.close();
 }
