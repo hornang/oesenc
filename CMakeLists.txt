@@ -30,6 +30,20 @@ add_library(oesenc
     src/s57.cpp
 )
 
+find_package(tinyxml2)
+
+if (tinyxml2_FOUND)
+    target_sources(oesenc PRIVATE
+        src/keylistreader.cpp
+        include/oesenc/keylistreader.h
+    )
+
+    target_link_libraries(oesenc PRIVATE tinyxml2::tinyxml2)
+else()
+    message(WARNING "tinyxml2 not found so not building keylistreader.cpp")
+endif()
+
+
 include(GenerateExportHeader)
 generate_export_header(oesenc)
 
