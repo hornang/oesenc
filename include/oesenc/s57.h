@@ -11,6 +11,8 @@
 #include "polygon.h"
 #include "position.h"
 
+#include "oesenc_export.h"
+
 namespace oesenc {
 
 class S57
@@ -164,11 +166,12 @@ public:
     void setLineGeometry(LineElement *elements, int length);
     void setPointGeometry(const oesenc::Position &position);
     void setMultiPointGeometry(std::vector<PointGeometry> points);
-    std::optional<oesenc::Position> pointGeometry() const;
-    std::vector<PointGeometry> multiPointGeometry() const { return m_multiPointGeometry; }
-    std::vector<oesenc::Polygon> polygons() const;
-    const std::vector<std::vector<oesenc::Position>> &lines() const { return m_lines; }
-    S57::Type type() const;
+
+    OESENC_EXPORT std::optional<oesenc::Position> pointGeometry() const;
+    OESENC_EXPORT std::vector<PointGeometry> multiPointGeometry() const { return m_multiPointGeometry; }
+    OESENC_EXPORT std::vector<oesenc::Polygon> polygons() const;
+    OESENC_EXPORT const std::vector<std::vector<oesenc::Position>> &lines() const { return m_lines; }
+    OESENC_EXPORT S57::Type type() const;
 
 private:
     void buildLine(const std::unordered_map<int, S57::VectorEdge> &vectorEdges,

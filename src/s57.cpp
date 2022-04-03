@@ -146,9 +146,10 @@ std::optional<T> S57::attribute(Attribute attribute) const
 
     return std::get<T>(value);
 }
-template std::optional<float> S57::attribute<float>(Attribute) const;
-template std::optional<uint32_t> S57::attribute<uint32_t>(Attribute) const;
-template std::optional<std::string> S57::attribute<std::string>(Attribute) const;
+
+template OESENC_EXPORT std::optional<float> S57::attribute<float>(Attribute) const;
+template OESENC_EXPORT std::optional<uint32_t> S57::attribute<uint32_t>(Attribute) const;
+template OESENC_EXPORT std::optional<std::string> S57::attribute<std::string>(Attribute) const;
 
 S57::Attribute S57::attributeFromTypeCode(int typeCode)
 {
