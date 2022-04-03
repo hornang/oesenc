@@ -40,6 +40,8 @@
 #define CELL_EXTENT_RECORD 100
 #define CELL_TXTDSC_INFO_FILE_RECORD 101
 
+#define SERVER_STATUS_RECORD 200
+
 using namespace oesenc;
 
 ChartFile::ChartFile(const std::string &filename)
@@ -108,7 +110,34 @@ bool ChartFile::ingest200(IReader *fpx,
         }
 
         switch (record.record_type) {
+        case SERVER_STATUS_RECORD: {
+            if (record.record_length >= 20) {
+                std::cerr << "Failed to parse header" << std::endl;
+                return false;
+            }
+            unsigned char *buf = getBuffer(record.record_length - sizeof(OSENC_Record_Base));
+            if (!fpx->read(buf, record.record_length - sizeof(OSENC_Record_Base))) {
+                return false;
+            }
+            auto *payload = reinterpret_cast<_OSENC_SERVERSTAT_Record_Payload *>(buf);
+
+            if (!payload->expireStatus) {
+                std::cerr << "Chart expired" << std::endl;
+                return false;
+            }
+
+            if (!payload->decryptStatus) {
+                std::cerr << "Signature failure" << std::endl;
+                return false;
+            }
+
+            break;
+        }
         case HEADER_SENC_VERSION: {
+            if (record.record_length < 6 || record.record_length >= 16) {
+                std::cerr << "Failed to parse header" << std::endl;
+                return false;
+            }
             unsigned char *buf = getBuffer(record.record_length - sizeof(OSENC_Record_Base));
             if (!fpx->read(buf, record.record_length - sizeof(OSENC_Record_Base))) {
                 return false;

@@ -333,6 +333,16 @@ typedef struct _OSENC_EXTENT_Record_Payload
     double extent_se_lon;
 } _OSENC_EXTENT_Record_Payload;
 
+typedef struct
+{
+    uint16_t serverStatus;
+    uint16_t decryptStatus;
+    uint16_t expireStatus;
+    uint16_t expireDaysRemaining;
+    uint16_t graceDaysAllowed;
+    uint16_t graceDaysRemaining;
+} _OSENC_SERVERSTAT_Record_Payload;
+
 #pragma pack(pop)
 
 namespace oesenc {
