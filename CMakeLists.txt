@@ -13,7 +13,6 @@ endif()
 
 add_library(oesenc
     include/oesenc/chartfile.h
-    include/oesenc/polygon.h
     include/oesenc/position.h
     include/oesenc/rect.h
     include/oesenc/s57.h
@@ -21,7 +20,6 @@ add_library(oesenc
     src/filereader.h
     src/filereader.cpp
     src/opencpn.cpp
-    src/polygon.cpp
     src/position.cpp
     src/vectorreader.h
     src/vectorreader.cpp

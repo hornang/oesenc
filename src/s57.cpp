@@ -210,10 +210,7 @@ S57::Type S57::type() const
 
 void S57::setLineGeometry(LineElement *elements, int length)
 {
-    for (int i = 0; i < length; i++) {
-        LineElement e = elements[i];
-        m_lineElements[e.startConnectedNode] = elements[i];
-    }
+    m_lineElements.assign(elements, elements + length);
 }
 
 void S57::setMultiPointGeometry(std::vector<PointGeometry> points)
@@ -229,137 +226,78 @@ void S57::buildGeometry(const std::unordered_map<int, S57::VectorEdge> &vectorEd
     case S57::Type::DepthArea:
     case S57::Type::BuiltUpArea:
     case S57::Type::Coverage:
-        buildArea(vectorEdges, connectedNodes);
+        m_polygons = buildGeometries<MultiGeometry>(m_lineElements, vectorEdges, connectedNodes);
         break;
     case S57::Type::CoastLine:
     case S57::Type::Road:
-        buildLine(vectorEdges, connectedNodes);
+        m_lines = buildGeometries<MultiGeometry>(m_lineElements, vectorEdges, connectedNodes);
         break;
     default:
         break;
     }
 }
 
-void S57::buildLine(const std::unordered_map<int, S57::VectorEdge> &vectorEdges,
-                    const std::unordered_map<int, S57::ConnectedNode> &connectedNodes)
+template <typename T>
+std::vector<T> S57::buildGeometries(const std::vector<LineElement> &lineElements,
+                                    const std::unordered_map<int, S57::VectorEdge> &vectorEdges,
+                                    const std::unordered_map<int, S57::ConnectedNode> &connectedNodes)
 {
-    if (m_lineElements.empty()) {
-        return;
-    }
 
-    auto it = m_lineElements.begin();
-    std::vector<Position> line;
+    std::vector<std::vector<LineElement>> lineStrings;
+    std::vector<T> geometries;
 
-    while (it != m_lineElements.end()) {
-        const LineElement lineElement = it->second;
-
-        auto connectedNodeIt = connectedNodes.find(lineElement.startConnectedNode);
-        if (connectedNodeIt != connectedNodes.end()) {
-            line.push_back(connectedNodeIt->second.position());
-        } else {
-            std::cerr << "Connected node index " << lineElement.startConnectedNode << " not found" << std::endl;
-        }
-
-        if (lineElement.edgeVector != 0) {
-            auto vectorEdgeIt = vectorEdges.find(lineElement.edgeVector);
-            if (vectorEdgeIt != vectorEdges.end()) {
-                const S57::VectorEdge &edge = vectorEdgeIt->second;
-                const std::vector<Position> &positions = edge.positions();
-                if (line.size() == 0) {
-                    std::cerr << "No first point?" << std::endl;
-                }
-
-                if (lineElement.direction == S57::Direction::Reverse) {
-                    line.insert(line.end(), positions.rbegin(), positions.rend());
-                } else {
-                    line.insert(line.end(), positions.begin(), positions.end());
-                }
-            } else {
-                std::cerr << "Vector edge " << lineElement.edgeVector << " not found" << std::endl;
+    for (const auto &lineElement : lineElements) {
+        bool foundLineString = false;
+        for (auto &lineString : lineStrings) {
+            if (lineElement.startConnectedNode == lineString.back().endConnectedNode) {
+                lineString.push_back(lineElement);
+                foundLineString = true;
+            } else if (lineElement.endConnectedNode == lineString.front().startConnectedNode) {
+                lineString.insert(lineString.end(), lineElement);
+                foundLineString = true;
             }
         }
+        if (!foundLineString) {
+            lineStrings.push_back({ lineElement });
+        }
+    }
 
-        m_lineElements.erase(it);
-        it = m_lineElements.find(lineElement.endConnectedNode);
-
-        if (it == m_lineElements.end()) {
-            it = m_lineElements.begin();
-
-            // Since the line is finished we willl add the end connected node as
-            // last point. Consider doing this for the polygon variant also to
-            // avoid closing the polygon when painting. Could also generalize the
-            // code for polygon and line into one function.
-            auto connectedNodeIt = connectedNodes.find(lineElement.endConnectedNode);
+    for (const auto &lineString : lineStrings) {
+        T geometry;
+        for (const auto &lineElement : lineString) {
+            auto connectedNodeIt = connectedNodes.find(lineElement.startConnectedNode);
             if (connectedNodeIt != connectedNodes.end()) {
-                line.push_back(connectedNodeIt->second.position());
+                geometry.push_back(connectedNodeIt->second.position());
             } else {
-                std::cerr << "Connected node index " << lineElement.endConnectedNode << " not found" << std::endl;
+                std::cerr << "Connected node index" << lineElement.startConnectedNode << " not found" << std::endl;
             }
-            m_lines.push_back(line);
-            line.clear();
-        }
-    }
 
-    if (!line.empty()) {
-        std::cerr << "Left over positions?" << std::endl;
-        m_lines.push_back(line);
-    }
-}
+            if (lineElement.edgeVector != 0) {
+                auto vectorEdgeIt = vectorEdges.find(lineElement.edgeVector);
+                if (vectorEdgeIt != vectorEdges.end()) {
+                    const S57::VectorEdge &edge = vectorEdgeIt->second;
+                    const std::vector<Position> &positions = edge.positions();
 
-std::vector<Polygon> S57::polygons() const
-{
-    return m_polygons;
-}
-
-void S57::buildArea(const std::unordered_map<int, S57::VectorEdge> &vectorEdges,
-                    const std::unordered_map<int, S57::ConnectedNode> &connectedNodes)
-{
-    if (m_lineElements.empty()) {
-        return;
-    }
-
-    auto it = m_lineElements.begin();
-    std::vector<Position> polygonPositions;
-    m_polygons.clear();
-
-    while (it != m_lineElements.end()) {
-        const LineElement lineElement = it->second;
-
-        auto connectedNodeIt = connectedNodes.find(lineElement.startConnectedNode);
-        if (connectedNodeIt != connectedNodes.end()) {
-            polygonPositions.push_back(connectedNodeIt->second.position());
-        } else {
-            std::cerr << "Connected node " << lineElement.startConnectedNode << " not found" << std::endl;
-        }
-
-        if (lineElement.edgeVector != 0) {
-            auto vectorEdgeIt = vectorEdges.find(lineElement.edgeVector);
-            if (vectorEdgeIt != vectorEdges.end()) {
-                const S57::VectorEdge &edge = vectorEdgeIt->second;
-                const std::vector<Position> &positions = edge.positions();
-
-                if (lineElement.direction == S57::Direction::Reverse) {
-                    polygonPositions.insert(polygonPositions.end(), positions.rbegin(), positions.rend());
+                    if (lineElement.direction == S57::Direction::Reverse) {
+                        geometry.insert(geometry.end(), positions.rbegin(), positions.rend());
+                    } else {
+                        geometry.insert(geometry.end(), positions.begin(), positions.end());
+                    }
                 } else {
-                    polygonPositions.insert(polygonPositions.end(), positions.begin(), positions.end());
+                    std::cerr << "Vector edge " << lineElement.edgeVector << " not found" << std::endl;
                 }
-            } else {
-                std::cerr << "Vector edge " << lineElement.edgeVector << " not found" << std::endl;
             }
         }
 
-        m_lineElements.erase(it);
-        it = m_lineElements.find(lineElement.endConnectedNode);
-
-        if (it == m_lineElements.end()) {
-            it = m_lineElements.begin();
-            m_polygons.push_back(Polygon(polygonPositions));
-            polygonPositions.clear();
+        const auto &lineElement = lineString.back();
+        auto connectedNodeIt = connectedNodes.find(lineElement.endConnectedNode);
+        if (connectedNodeIt != connectedNodes.end()) {
+            geometry.push_back(connectedNodeIt->second.position());
+        } else {
+            std::cerr << "Connected node index" << lineElement.endConnectedNode << " not found" << std::endl;
         }
+        geometries.push_back(geometry);
     }
 
-    if (!polygonPositions.empty()) {
-        std::cerr << "Left over positions?" << std::endl;
-        m_polygons.push_back(polygonPositions);
-    }
+    return geometries;
 }

@@ -8,7 +8,6 @@
 #include <variant>
 #include <vector>
 
-#include "polygon.h"
 #include "position.h"
 
 #include "oesenc_export.h"
@@ -153,6 +152,8 @@ public:
         double value = 0;
     };
 
+    using MultiGeometry = std::vector<oesenc::Position>;
+
     S57(Type type);
     static Type fromTypeCode(int typeCode);
     static Attribute attributeFromTypeCode(int typeCode);
@@ -169,19 +170,24 @@ public:
 
     OESENC_EXPORT std::optional<oesenc::Position> pointGeometry() const;
     OESENC_EXPORT std::vector<PointGeometry> multiPointGeometry() const { return m_multiPointGeometry; }
-    OESENC_EXPORT std::vector<oesenc::Polygon> polygons() const;
-    OESENC_EXPORT const std::vector<std::vector<oesenc::Position>> &lines() const { return m_lines; }
+    OESENC_EXPORT std::vector<MultiGeometry> polygons() const { return m_polygons; }
+    OESENC_EXPORT const std::vector<MultiGeometry> &lines() const { return m_lines; }
     OESENC_EXPORT S57::Type type() const;
+
+    template <typename T>
+    static std::vector<T> buildGeometries(const std::vector<LineElement> &lineElements,
+                                          const std::unordered_map<int, S57::VectorEdge> &vectorEdges,
+                                          const std::unordered_map<int, S57::ConnectedNode> &connectedNodes);
 
 private:
     void buildLine(const std::unordered_map<int, S57::VectorEdge> &vectorEdges,
                    const std::unordered_map<int, S57::ConnectedNode> &connectedNodes);
     void buildArea(const std::unordered_map<int, S57::VectorEdge> &vectorEdges,
                    const std::unordered_map<int, S57::ConnectedNode> &connectedNodes);
-    std::unordered_map<unsigned int, LineElement> m_lineElements;
-    std::vector<std::vector<oesenc::Position>> m_lines;
+    std::vector<LineElement> m_lineElements;
+    std::vector<MultiGeometry> m_lines;
     Type m_type = Type::Unknown;
-    std::vector<oesenc::Polygon> m_polygons;
+    std::vector<MultiGeometry> m_polygons;
     std::vector<PointGeometry> m_multiPointGeometry;
     std::optional<oesenc::Position> m_pointGeometry;
     std::unordered_map<Attribute, std::variant<uint32_t, float, std::string>> m_attributes;
