@@ -28,6 +28,11 @@ void Position::setLongitude(double longitude)
     m_longitude = longitude;
 }
 
+bool Position::operator==(const Position &position) const
+{
+    return (m_latitude == position.latitude() && m_longitude == position.longitude());
+}
+
 bool Position::operator!=(const Position &position) const
 {
     return (m_latitude != position.latitude() || m_longitude != position.longitude());

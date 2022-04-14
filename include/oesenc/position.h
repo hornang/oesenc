@@ -17,6 +17,7 @@ public:
     double longitude() const;
     void setLatitude(double latitude);
     void setLongitude(double longitude);
+    bool operator==(const Position &position) const;
     bool operator!=(const Position &position) const;
 
 private:

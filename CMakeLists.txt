@@ -2,6 +2,8 @@ cmake_minimum_required(VERSION 3.15)
 
 project(oesenc LANGUAGES CXX)
 
+include(CTest)
+
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
@@ -47,3 +49,8 @@ generate_export_header(oesenc)
 
 target_include_directories(oesenc PUBLIC include)
 target_include_directories(oesenc PUBLIC ${CMAKE_CURRENT_BINARY_DIR})
+
+if (BUILD_TESTING)
+    enable_testing()
+    add_subdirectory(tests)
+endif()
