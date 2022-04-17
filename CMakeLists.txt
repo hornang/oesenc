@@ -7,12 +7,6 @@ include(CTest)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-if (MSVC)
-    add_compile_options(/WX)
-else()
-    add_compile_options(-Wall -Wextra -pedantic)
-endif()
-
 add_library(oesenc
     include/oesenc/chartfile.h
     include/oesenc/position.h
