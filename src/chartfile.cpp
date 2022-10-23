@@ -350,9 +350,10 @@ bool ChartFile::ingest200(IReader *fpx,
             }
             _OSENC_AreaGeometry_Record_Payload *pPayload = (_OSENC_AreaGeometry_Record_Payload *)buf;
 
+            unsigned char *next_byte = nullptr;
+            next_byte = skipTessellationData(pPayload);
+
             if (s57 != nullptr) {
-                unsigned char *next_byte = nullptr;
-                next_byte = skipTessellationData(pPayload);
                 s57->setLineGeometry(reinterpret_cast<S57::LineElement *>(next_byte),
                                      pPayload->edgeVector_count);
             }
