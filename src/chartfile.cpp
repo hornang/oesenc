@@ -439,12 +439,7 @@ bool ChartFile::ingest200(IReader *fpx,
                 }
                 free(pPoints);
                 vectorEdge.setPositions(positions);
-                // The index should be representable by a positive 32 bit integer
-                if (featureIndex > 0x7FFFFFFF) {
-                    std::cerr << "Found bad vector edge index: " << featureIndex << std::endl;
-                } else {
-                    vectorEdges[featureIndex] = std::move(vectorEdge);
-                }
+                vectorEdges[featureIndex] = vectorEdge;
             }
             break;
         }
