@@ -65,8 +65,8 @@ ChartFile::~ChartFile()
 
 bool ChartFile::readHeaders()
 {
-    std::unordered_map<int, S57::VectorEdge> vectorEdges;
-    std::unordered_map<int, S57::ConnectedNode> connectedNodes;
+    std::unordered_map<unsigned int, S57::VectorEdge> vectorEdges;
+    std::unordered_map<unsigned int, S57::ConnectedNode> connectedNodes;
 
     if (!ingest200(m_reader.get(), m_s57, vectorEdges, connectedNodes, true)) {
         std::cerr << "Failed to read" << std::endl;
@@ -77,8 +77,8 @@ bool ChartFile::readHeaders()
 
 bool ChartFile::read()
 {
-    std::unordered_map<int, S57::VectorEdge> vectorEdges;
-    std::unordered_map<int, S57::ConnectedNode> connectedNodes;
+    std::unordered_map<unsigned int, S57::VectorEdge> vectorEdges;
+    std::unordered_map<unsigned int, S57::ConnectedNode> connectedNodes;
 
     if (!ingest200(m_reader.get(), m_s57, vectorEdges, connectedNodes)) {
         std::cerr << "Failed to read" << std::endl;
@@ -93,8 +93,8 @@ bool ChartFile::read()
 
 bool ChartFile::ingest200(IReader *fpx,
                           std::vector<S57> &s57Vector,
-                          std::unordered_map<int, S57::VectorEdge> &vectorEdges,
-                          std::unordered_map<int, S57::ConnectedNode> &connectedNodes,
+                          std::unordered_map<unsigned int, S57::VectorEdge> &vectorEdges,
+                          std::unordered_map<unsigned int, S57::ConnectedNode> &connectedNodes,
                           bool headersOnly)
 {
     if (!fpx->open()) {

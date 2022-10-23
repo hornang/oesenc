@@ -162,8 +162,8 @@ public:
     template <typename T>
     std::optional<T> attribute(Attribute attribute) const;
 
-    void buildGeometry(const std::unordered_map<int, S57::VectorEdge> &vectorEdges,
-                       const std::unordered_map<int, S57::ConnectedNode> &connectedNodes);
+    void buildGeometry(const std::unordered_map<unsigned int, S57::VectorEdge> &vectorEdges,
+                       const std::unordered_map<unsigned int, S57::ConnectedNode> &connectedNodes);
     void setLineGeometry(LineElement *elements, int length);
     void setPointGeometry(const oesenc::Position &position);
     void setMultiPointGeometry(std::vector<PointGeometry> points);
@@ -176,14 +176,14 @@ public:
 
     template <typename T>
     static std::vector<T> buildGeometries(const std::vector<LineElement> &lineElements,
-                                          const std::unordered_map<int, S57::VectorEdge> &vectorEdges,
-                                          const std::unordered_map<int, S57::ConnectedNode> &connectedNodes);
+                                          const std::unordered_map<unsigned int, S57::VectorEdge> &vectorEdges,
+                                          const std::unordered_map<unsigned int, S57::ConnectedNode> &connectedNodes);
 
 private:
-    void buildLine(const std::unordered_map<int, S57::VectorEdge> &vectorEdges,
-                   const std::unordered_map<int, S57::ConnectedNode> &connectedNodes);
-    void buildArea(const std::unordered_map<int, S57::VectorEdge> &vectorEdges,
-                   const std::unordered_map<int, S57::ConnectedNode> &connectedNodes);
+    void buildLine(const std::unordered_map<unsigned int, S57::VectorEdge> &vectorEdges,
+                   const std::unordered_map<unsigned int, S57::ConnectedNode> &connectedNodes);
+    void buildArea(const std::unordered_map<unsigned int, S57::VectorEdge> &vectorEdges,
+                   const std::unordered_map<unsigned int, S57::ConnectedNode> &connectedNodes);
     std::vector<LineElement> m_lineElements;
     std::vector<MultiGeometry> m_lines;
     Type m_type = Type::Unknown;

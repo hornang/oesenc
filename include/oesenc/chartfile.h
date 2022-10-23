@@ -371,8 +371,8 @@ public:
 private:
     bool ingest200(IReader *reader,
                    std::vector<S57> &s57Vector,
-                   std::unordered_map<int, S57::VectorEdge> &vectorEdges,
-                   std::unordered_map<int, S57::ConnectedNode> &connectedNodes,
+                   std::unordered_map<unsigned int, S57::VectorEdge> &vectorEdges,
+                   std::unordered_map<unsigned int, S57::ConnectedNode> &connectedNodes,
                    bool headersOnly = false);
     unsigned char *getBuffer(size_t length);
     uint8_t *skipTessellationData(_OSENC_AreaGeometry_Record_Payload *record);

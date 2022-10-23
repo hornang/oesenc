@@ -218,8 +218,8 @@ void S57::setMultiPointGeometry(std::vector<PointGeometry> points)
     m_multiPointGeometry = points;
 }
 
-void S57::buildGeometry(const std::unordered_map<int, S57::VectorEdge> &vectorEdges,
-                        const std::unordered_map<int, S57::ConnectedNode> &connectedNodes)
+void S57::buildGeometry(const std::unordered_map<unsigned int, S57::VectorEdge> &vectorEdges,
+                        const std::unordered_map<unsigned int, S57::ConnectedNode> &connectedNodes)
 {
     switch (m_type) {
     case S57::Type::LandArea:
@@ -239,8 +239,8 @@ void S57::buildGeometry(const std::unordered_map<int, S57::VectorEdge> &vectorEd
 
 template <typename T>
 std::vector<T> S57::buildGeometries(const std::vector<LineElement> &lineElements,
-                                    const std::unordered_map<int, S57::VectorEdge> &vectorEdges,
-                                    const std::unordered_map<int, S57::ConnectedNode> &connectedNodes)
+                                    const std::unordered_map<unsigned int, S57::VectorEdge> &vectorEdges,
+                                    const std::unordered_map<unsigned int, S57::ConnectedNode> &connectedNodes)
 {
 
     std::vector<std::vector<LineElement>> lineStrings;
