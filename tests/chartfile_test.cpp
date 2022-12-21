@@ -14,7 +14,7 @@ TEST(testS57, buildGeometryBasic)
     lineElements.push_back({ 3, 0, 0, S57::Direction::Forward });
     s57.setLineGeometry(lineElements.data(), lineElements.size());
 
-    std::unordered_map<int, S57::ConnectedNode> connectedNodes = {
+    std::unordered_map<unsigned int, S57::ConnectedNode> connectedNodes = {
         { 0, { { 0, 0 } } },
         { 1, { { 1, 0 } } },
         { 2, { { 1, 1 } } },
