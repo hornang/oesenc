@@ -164,7 +164,8 @@ public:
 
     void buildGeometry(const std::unordered_map<unsigned int, S57::VectorEdge> &vectorEdges,
                        const std::unordered_map<unsigned int, S57::ConnectedNode> &connectedNodes);
-    void setLineGeometry(LineElement *elements, int length);
+    void setLineGeometry(const LineElement *elements, int length);
+    void setPolygonGeometry(const LineElement *elements, int length);
     void setPointGeometry(const oesenc::Position &position);
     void setMultiPointGeometry(std::vector<PointGeometry> points);
 
@@ -185,9 +186,10 @@ private:
     void buildArea(const std::unordered_map<unsigned int, S57::VectorEdge> &vectorEdges,
                    const std::unordered_map<unsigned int, S57::ConnectedNode> &connectedNodes);
     std::vector<LineElement> m_lineElements;
+    std::vector<LineElement> m_polygonLineElements;
     std::vector<MultiGeometry> m_lines;
-    Type m_type = Type::Unknown;
     std::vector<MultiGeometry> m_polygons;
+    Type m_type = Type::Unknown;
     std::vector<PointGeometry> m_multiPointGeometry;
     std::optional<oesenc::Position> m_pointGeometry;
     std::unordered_map<Attribute, std::variant<uint32_t, float, std::string>> m_attributes;

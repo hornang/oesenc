@@ -354,7 +354,7 @@ bool ChartFile::ingest200(IReader *fpx,
             next_byte = skipTessellationData(pPayload);
 
             if (s57 != nullptr) {
-                s57->setLineGeometry(reinterpret_cast<S57::LineElement *>(next_byte),
+                s57->setPolygonGeometry(reinterpret_cast<S57::LineElement *>(next_byte),
                                      pPayload->edgeVector_count);
             }
 
