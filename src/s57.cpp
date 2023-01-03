@@ -1,4 +1,5 @@
-﻿#include <iostream>
+﻿#include <cassert>
+#include <iostream>
 
 #include "oesenc/s57.h"
 
@@ -208,9 +209,14 @@ S57::Type S57::type() const
     return m_type;
 }
 
-void S57::setLineGeometry(LineElement *elements, int length)
+void S57::setLineGeometry(const LineElement *elements, int length)
 {
     m_lineElements.assign(elements, elements + length);
+}
+
+void S57::setPolygonGeometry(const LineElement *elements, int length)
+{
+    m_polygonLineElements.assign(elements, elements + length);
 }
 
 void S57::setMultiPointGeometry(std::vector<PointGeometry> points)
@@ -221,20 +227,9 @@ void S57::setMultiPointGeometry(std::vector<PointGeometry> points)
 void S57::buildGeometry(const std::unordered_map<unsigned int, S57::VectorEdge> &vectorEdges,
                         const std::unordered_map<unsigned int, S57::ConnectedNode> &connectedNodes)
 {
-    switch (m_type) {
-    case S57::Type::LandArea:
-    case S57::Type::DepthArea:
-    case S57::Type::BuiltUpArea:
-    case S57::Type::Coverage:
-        m_polygons = buildGeometries<MultiGeometry>(m_lineElements, vectorEdges, connectedNodes);
-        break;
-    case S57::Type::CoastLine:
-    case S57::Type::Road:
-        m_lines = buildGeometries<MultiGeometry>(m_lineElements, vectorEdges, connectedNodes);
-        break;
-    default:
-        break;
-    }
+
+    m_lines = buildGeometries<MultiGeometry>(m_lineElements, vectorEdges, connectedNodes);
+    m_polygons = buildGeometries<MultiGeometry>(m_polygonLineElements, vectorEdges, connectedNodes);
 }
 
 template <typename T>
