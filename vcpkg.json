@@ -1,0 +1,5 @@
+{
+    "name": "oesenc",
+    "version": "0.1.0",
+    "dependencies": ["tinyxml2", "gtest"]
+}
