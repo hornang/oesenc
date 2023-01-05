@@ -26,4 +26,8 @@ jobs:
         uses: lukka/run-cmake@v10
         with:
           configurePreset: 'ninja-multi-vcpkg'
-          buildPreset: 'win-release'
+          buildPreset: 'win-debug'
+
+      - name: Run unit tests
+        working-directory: ${{ github.workspace }}/builds/ninja-multi-vcpkg
+        run: ctest -V -C Debug
