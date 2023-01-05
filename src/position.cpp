@@ -38,8 +38,10 @@ bool Position::operator!=(const Position &position) const
     return (m_latitude != position.latitude() || m_longitude != position.longitude());
 }
 
+namespace oesenc {
 std::ostream &operator<<(std::ostream &os, const Position &position)
 {
     os << position.latitude() << " " << position.longitude();
     return os;
+}
 }

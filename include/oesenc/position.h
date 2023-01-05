@@ -28,6 +28,6 @@ private:
     double m_longitude = 0;
 };
 
-};
-
 std::ostream &operator<<(std::ostream &os, const oesenc::Position &position);
+
+};

@@ -35,6 +35,7 @@ private:
     bool m_valid = false;
 };
 
+std::ostream &operator<<(std::ostream &os, const oesenc::Rect &rect);
+
 };
 
-std::ostream &operator<<(std::ostream &os, const oesenc::Rect &rect);
