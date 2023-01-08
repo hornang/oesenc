@@ -28,6 +28,5 @@ private:
     double m_longitude = 0;
 };
 
-std::ostream &operator<<(std::ostream &os, const oesenc::Position &position);
-
+OESENC_EXPORT std::ostream &operator<<(std::ostream &os, const oesenc::Position &position);
 };

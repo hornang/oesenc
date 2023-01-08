@@ -349,24 +349,24 @@ namespace oesenc {
 
 class IReader;
 
-class ChartFile
+class OESENC_EXPORT ChartFile
 {
 public:
-    OESENC_EXPORT ChartFile(const std::string &filename);
-    OESENC_EXPORT ChartFile(const std::vector<std::byte> &data);
-    OESENC_EXPORT ~ChartFile();
-    OESENC_EXPORT bool readHeaders();
-    OESENC_EXPORT bool read();
-    OESENC_EXPORT int getReadVersion() { return m_senc_file_read_version; }
-    OESENC_EXPORT int getSencReadVersion() { return m_senc_file_read_version; }
-    OESENC_EXPORT int getSENCReadLastUpdate() { return m_read_last_applied_update; }
-    OESENC_EXPORT std::string getUpdateDate() { return m_LastUpdateDate; }
-    OESENC_EXPORT std::string getBaseDate() { return m_sdate000; }
-    OESENC_EXPORT std::string getReadName() { return m_Name; }
-    OESENC_EXPORT std::string getSoundingsDatumString() { return m_SoundingDatum; }
-    OESENC_EXPORT Rect extent() const { return m_extent; }
-    OESENC_EXPORT int nativeScale() const { return m_nativeScale; }
-    OESENC_EXPORT const std::vector<S57> &s57() const { return m_s57; }
+    ChartFile(const std::string &filename);
+    ChartFile(const std::vector<std::byte> &data);
+    ~ChartFile();
+    bool readHeaders();
+    bool read();
+    int getReadVersion() const { return m_senc_file_read_version; }
+    int getSencReadVersion() const { return m_senc_file_read_version; }
+    int getSENCReadLastUpdate() const { return m_read_last_applied_update; }
+    std::string getUpdateDate() const { return m_LastUpdateDate; }
+    std::string getBaseDate() const { return m_sdate000; }
+    std::string getReadName() const { return m_Name; }
+    std::string getSoundingsDatumString() const { return m_SoundingDatum; }
+    Rect extent() const { return m_extent; }
+    int nativeScale() const { return m_nativeScale; }
+    const std::vector<S57> &s57() const { return m_s57; }
 
 private:
     bool ingest200(IReader *reader,
@@ -400,4 +400,4 @@ private:
     std::vector<S57> m_s57;
 };
 
-};
+}

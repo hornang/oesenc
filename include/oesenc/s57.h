@@ -14,7 +14,7 @@
 
 namespace oesenc {
 
-class S57
+class OESENC_EXPORT S57
 {
 public:
     class VectorEdge
@@ -169,16 +169,17 @@ public:
     void setPointGeometry(const oesenc::Position &position);
     void setMultiPointGeometry(std::vector<PointGeometry> points);
 
-    OESENC_EXPORT std::optional<oesenc::Position> pointGeometry() const;
-    OESENC_EXPORT std::vector<PointGeometry> multiPointGeometry() const { return m_multiPointGeometry; }
-    OESENC_EXPORT std::vector<MultiGeometry> polygons() const { return m_polygons; }
-    OESENC_EXPORT const std::vector<MultiGeometry> &lines() const { return m_lines; }
-    OESENC_EXPORT S57::Type type() const;
+    std::optional<oesenc::Position> pointGeometry() const;
+    std::vector<PointGeometry> multiPointGeometry() const { return m_multiPointGeometry; }
+    std::vector<MultiGeometry> polygons() const { return m_polygons; }
+    const std::vector<MultiGeometry> &lines() const { return m_lines; }
+    S57::Type type() const;
 
     template <typename T>
-    static std::vector<T> buildGeometries(const std::vector<LineElement> &lineElements,
-                                          const std::unordered_map<unsigned int, S57::VectorEdge> &vectorEdges,
-                                          const std::unordered_map<unsigned int, S57::ConnectedNode> &connectedNodes);
+    OESENC_EXPORT static std::vector<T>
+    buildGeometries(const std::vector<LineElement> &lineElements,
+                    const std::unordered_map<unsigned int, S57::VectorEdge> &vectorEdges,
+                    const std::unordered_map<unsigned int, S57::ConnectedNode> &connectedNodes);
 
 private:
     void buildLine(const std::unordered_map<unsigned int, S57::VectorEdge> &vectorEdges,
@@ -195,5 +196,6 @@ private:
     std::unordered_map<Attribute, std::variant<uint32_t, float, std::string>> m_attributes;
 };
 
-};
-std::ostream &operator<<(std::ostream &os, const oesenc::S57::LineElement &e);
+}
+
+OESENC_EXPORT std::ostream &operator<<(std::ostream &os, const oesenc::S57::LineElement &e);
