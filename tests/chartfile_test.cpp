@@ -1,4 +1,5 @@
 #include <gtest/gtest.h>
+#include <oesenc/chartfile.h>
 #include <oesenc/s57.h>
 
 using namespace oesenc;
@@ -14,6 +15,10 @@ TEST(testS57, buildGeometryBasic)
     lineElements.push_back({ 3, 0, 0, S57::Direction::Forward });
     s57.setLineGeometry(lineElements.data(), lineElements.size());
 
+    for (const S57::LineElement &lineElement : lineElements) {
+        std::cout << "Input: " << lineElement << std::endl;
+    }
+
     std::unordered_map<unsigned int, S57::ConnectedNode> connectedNodes = {
         { 0, { { 0, 0 } } },
         { 1, { { 1, 0 } } },
@@ -26,6 +31,11 @@ TEST(testS57, buildGeometryBasic)
     ASSERT_EQ(result, correct);
 }
 
+TEST(testS57, chartfile)
+{
+    // Compilation check
+    ChartFile file("test");
+}
 int main(int argc, char **argv)
 {
     ::testing::InitGoogleTest(&argc, argv);

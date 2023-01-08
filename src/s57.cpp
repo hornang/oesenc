@@ -8,9 +8,9 @@ using namespace oesenc;
 std::ostream &operator<<(std::ostream &os, const S57::LineElement &e)
 {
     if (e.direction == S57::Direction::Forward) {
-        os << " forward: " << e.startConnectedNode << " " << e.edgeVector << " " << e.endConnectedNode << std::endl;
+        os << "[forward]: " << e.startConnectedNode << " " << e.edgeVector << " " << e.endConnectedNode;
     } else {
-        os << " reverse: " << e.startConnectedNode << " " << e.edgeVector << " " << e.endConnectedNode << std::endl;
+        os << "[reverse]: " << e.startConnectedNode << " " << e.edgeVector << " " << e.endConnectedNode;
     }
 
     return os;

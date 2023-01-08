@@ -7,7 +7,7 @@
 
 namespace oesenc {
 
-class KeyListReader
+class OESENC_EXPORT KeyListReader
 {
 public:
     enum class Status {
@@ -17,9 +17,9 @@ public:
         Failed,
     };
 
-    OESENC_EXPORT KeyListReader() = default;
-    OESENC_EXPORT Status load(const std::string &filename);
-    OESENC_EXPORT std::string key(const std::string &chartName) const;
+    KeyListReader() = default;
+    Status load(const std::string &filename);
+    std::string key(const std::string &chartName) const;
 
 private:
     std::unordered_map<std::string, std::string> m_chartKeys;

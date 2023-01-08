@@ -45,6 +45,5 @@ target_include_directories(oesenc PUBLIC include)
 target_include_directories(oesenc PUBLIC ${CMAKE_CURRENT_BINARY_DIR})
 
 if (BUILD_TESTING)
-    enable_testing()
     add_subdirectory(tests)
 endif()

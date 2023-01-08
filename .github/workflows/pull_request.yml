@@ -26,7 +26,7 @@ jobs:
         uses: lukka/run-cmake@v10
         with:
           configurePreset: 'ninja-multi-vcpkg'
-          buildPreset: 'win-debug'
+          buildPreset: 'debug'
 
       - name: Run unit tests
         working-directory: ${{ github.workspace }}/builds/ninja-multi-vcpkg
@@ -37,18 +37,21 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v2
+        with:
+          submodules: true
 
-      - name: Install dependencies
-        run: sudo apt-get install ninja-build libgtest-dev libtinyxml2-dev
+      - name: Install ninja
+        run: sudo apt-get install ninja-build
 
-      - name: CMake configure
-        shell: bash
-        run: cmake --preset ninja-multi
+      - name: Restore artifacts, or setup vcpkg (do not install any package)
+        uses: lukka/run-vcpkg@v10
 
-      - name: CMake build
-        run: cmake --build --preset linux-debug
+      - name: Run CMake with vcpkg.json manifest
+        uses: lukka/run-cmake@v10
+        with:
+          configurePreset: 'ninja-multi-vcpkg'
+          buildPreset: 'debug'
 
       - name: Run unit tests
-        working-directory: ${{ github.workspace }}/builds/ninja-multi
+        working-directory: ${{ github.workspace }}/builds/ninja-multi-vcpkg
         run: ctest -V -C Debug
-

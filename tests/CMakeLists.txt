@@ -1,13 +1,20 @@
 find_package(GTest CONFIG REQUIRED)
-add_executable(chartfile_test chartfile_test.cpp)
 
 enable_testing()
 
-target_link_libraries(chartfile_test
-    PRIVATE
-        GTest::gtest
-        GTest::gtest_main
-        oesenc
-)
+function(addTest)
+    set(BASENAME ${ARGV0}_test)
+    add_executable(${BASENAME} ${BASENAME}.cpp)
+    target_link_libraries(${BASENAME} PRIVATE GTest::gtest GTest::gtest_main oesenc)
+    add_test(NAME ${BASENAME} COMMAND ${BASENAME})
 
-add_test(NAME chartfile_test COMMAND chartfile_test)
+    if(WIN32 AND BUILD_SHARED_LIBS)
+        add_custom_command(TARGET ${BASENAME} POST_BUILD
+            COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_RUNTIME_DLLS:${BASENAME}> $<TARGET_FILE_DIR:${BASENAME}>
+            COMMAND_EXPAND_LISTS
+        )
+    endif()
+endfunction()
+
+addTest(chartfile)
+addTest(keylistreader)
