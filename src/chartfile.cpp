@@ -44,14 +44,16 @@
 
 using namespace oesenc;
 
-ChartFile::ChartFile(const std::string &filename)
+ChartFile::ChartFile(const std::string &filename, const Config &config)
     : m_filename(filename)
+    , m_config(config)
 {
     m_reader = std::make_shared<FileReader>(m_filename);
 }
 
-ChartFile::ChartFile(const std::vector<std::byte> &data)
+ChartFile::ChartFile(const std::vector<std::byte> &data, const Config &config)
     : m_data(data)
+    , m_config(config)
 {
     m_reader = std::make_shared<VectorReader>(data);
 }
@@ -437,6 +439,11 @@ bool ChartFile::ingest200(IReader *fpx,
                                                                     pPoints[i * 2 + 1],
                                                                     ref));
                 }
+
+                if (m_config.vectorEdgeDecimator) {
+                    positions = m_config.vectorEdgeDecimator(positions);
+                }
+
                 free(pPoints);
                 vectorEdge.setPositions(positions);
                 vectorEdges[featureIndex] = vectorEdge;

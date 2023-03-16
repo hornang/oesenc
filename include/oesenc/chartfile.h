@@ -1,5 +1,6 @@
 #pragma once
 
+#include <functional>
 #include <memory>
 #include <unordered_map>
 #include <vector>
@@ -352,8 +353,14 @@ class IReader;
 class OESENC_EXPORT ChartFile
 {
 public:
-    ChartFile(const std::string &filename);
-    ChartFile(const std::vector<std::byte> &data);
+    struct Config
+    {
+        using Line = std::vector<Position>;
+        std::function<Line(Line)> vectorEdgeDecimator = nullptr;
+    };
+
+    ChartFile(const std::string &filename, const Config &config = Config { nullptr });
+    ChartFile(const std::vector<std::byte> &data, const Config &config = Config { nullptr });
     ~ChartFile();
     bool readHeaders();
     bool read();
@@ -395,6 +402,7 @@ private:
 
     unsigned char *pBuffer = nullptr;
     size_t bufferSize = 0;
+    Config m_config;
     Rect m_extent;
     std::shared_ptr<IReader> m_reader;
     std::vector<S57> m_s57;
