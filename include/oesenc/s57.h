@@ -158,7 +158,7 @@ public:
     static Type fromTypeCode(int typeCode);
     static Attribute attributeFromTypeCode(int typeCode);
     void setAttribute(Attribute attribute, std::variant<uint32_t, float, std::string> value);
-
+    std::vector<Attribute> attributeList() const;
     template <typename T>
     std::optional<T> attribute(Attribute attribute) const;
 
