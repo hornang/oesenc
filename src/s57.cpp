@@ -132,6 +132,17 @@ void S57::setAttribute(Attribute attribute, std::variant<uint32_t, float, std::s
     m_attributes[attribute] = value;
 }
 
+std::vector<S57::Attribute> S57::attributeList() const
+{
+    std::vector<Attribute> keys;
+    keys.reserve(m_attributes.size());
+    for (const auto &[key, value] : m_attributes) {
+        keys.push_back(key);
+    }
+
+    return keys;
+}
+
 template <typename T>
 std::optional<T> S57::attribute(Attribute attribute) const
 {
