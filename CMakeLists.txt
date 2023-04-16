@@ -24,16 +24,23 @@ add_library(oesenc
     src/s57.cpp
 )
 
-find_package(tinyxml2)
+find_package(tinyxml2 QUIET)
 
-if (tinyxml2_FOUND)
+if(tinyxml2_FOUND)
+    target_link_libraries(oesenc PRIVATE tinyxml2::tinyxml2)
+else()
+    find_package(PkgConfig REQUIRED)
+    pkg_check_modules(tinyxml2 REQUIRED tinyxml2)
+    pkg_get_variable(TINYXML_LIB ${tinyxml2_MODULE_NAME} libs)
+    target_link_libraries(oesenc PRIVATE ${tinyxml2_LINK_LIBRARIES})
+endif()
+
+if(tinyxml2_FOUND)
     set(OESENC_KEYLISTREADER_ENABLED TRUE)
     target_sources(oesenc PRIVATE
         src/keylistreader.cpp
         include/oesenc/keylistreader.h
     )
-
-    target_link_libraries(oesenc PRIVATE tinyxml2::tinyxml2)
 else()
     set(OESENC_KEYLISTREADER_ENABLED FALSE)
     message(WARNING "tinyxml2 not found so not building keylistreader.cpp")
