@@ -2,6 +2,7 @@ cmake_minimum_required(VERSION 3.15)
 
 project(oesenc LANGUAGES CXX)
 
+include(GNUInstallDirs)
 include(CTest)
 
 set(CMAKE_CXX_STANDARD 17)
@@ -41,9 +42,64 @@ endif()
 include(GenerateExportHeader)
 generate_export_header(oesenc)
 
-target_include_directories(oesenc PUBLIC include)
-target_include_directories(oesenc PUBLIC ${CMAKE_CURRENT_BINARY_DIR})
+target_include_directories(oesenc PUBLIC
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}>
+    $<INSTALL_INTERFACE:include>
+)
 
 if (BUILD_TESTING)
     add_subdirectory(tests)
 endif()
+
+include(CMakePackageConfigHelpers)
+
+configure_package_config_file(
+    ${CMAKE_CURRENT_SOURCE_DIR}/Config.cmake.in
+    ${CMAKE_CURRENT_BINARY_DIR}/OesencConfig.cmake
+    INSTALL_DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/Oesenc
+)
+
+install(TARGETS oesenc
+    EXPORT OesencTargets
+    LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+    ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
+    RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+    INCLUDES DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
+)
+
+install(
+    FILES
+        ${CMAKE_CURRENT_SOURCE_DIR}/include/oesenc/chartfile.h
+        ${CMAKE_CURRENT_SOURCE_DIR}/include/oesenc/chartfile.h
+        ${CMAKE_CURRENT_SOURCE_DIR}/include/oesenc/opencpn.h
+        ${CMAKE_CURRENT_SOURCE_DIR}/include/oesenc/position.h
+        ${CMAKE_CURRENT_SOURCE_DIR}/include/oesenc/rect.h
+        ${CMAKE_CURRENT_SOURCE_DIR}/include/oesenc/s57.h
+        ${CMAKE_CURRENT_BINARY_DIR}/oesenc_export.h
+    DESTINATION
+        ${CMAKE_INSTALL_INCLUDEDIR}/oesenc
+)
+
+if(OESENC_KEYLISTREADER_ENABLED)
+    install(
+        FILES
+            ${CMAKE_CURRENT_SOURCE_DIR}/include/oesenc/keylistreader.h
+        DESTINATION
+            ${CMAKE_INSTALL_INCLUDEDIR}/oesenc
+    )
+endif()
+
+install(
+    EXPORT OesencTargets
+    FILE OesencTargets.cmake
+    NAMESPACE Oesenc::
+    DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/oesenc
+)
+
+install(
+    FILES
+        ${CMAKE_CURRENT_BINARY_DIR}/OesencConfig.cmake
+    DESTINATION
+        ${CMAKE_INSTALL_LIBDIR}/cmake/oesenc
+)
