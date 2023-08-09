@@ -53,6 +53,13 @@ ChartFile::ChartFile(const std::string &filename, const Config &config)
 {
 }
 
+ChartFile::ChartFile(std::istream &stream, const Config &config)
+    : m_reader(stream)
+    , m_config(config)
+    , m_stringstream("")
+{
+}
+
 ChartFile::ChartFile(const std::vector<std::byte> &data, const Config &config)
     : m_stringstream(m_data)
     , m_reader(m_stringstream)

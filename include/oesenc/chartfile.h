@@ -359,6 +359,7 @@ public:
         std::function<Line(Line)> vectorEdgeDecimator = nullptr;
     };
 
+    ChartFile(std::istream &stream, const Config &config = Config { nullptr });
     ChartFile(const std::string &filename, const Config &config = Config { nullptr });
     ChartFile(const std::vector<std::byte> &data, const Config &config = Config { nullptr });
     ~ChartFile();
