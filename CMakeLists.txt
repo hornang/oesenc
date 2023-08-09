@@ -14,12 +14,8 @@ add_library(oesenc
     include/oesenc/rect.h
     include/oesenc/s57.h
     src/chartfile.cpp
-    src/filereader.h
-    src/filereader.cpp
     src/opencpn.cpp
     src/position.cpp
-    src/vectorreader.h
-    src/vectorreader.cpp
     src/reader.h
     src/rect.cpp
     src/s57.cpp

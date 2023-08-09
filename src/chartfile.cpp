@@ -1,14 +1,14 @@
+#include <algorithm>
 #include <cstring>
 #include <fstream>
 #include <iostream>
 #include <memory>
+#include <sstream>
 #include <unordered_map>
 
-#include "filereader.h"
 #include "oesenc/chartfile.h"
 #include "oesenc/opencpn.h"
 #include "oesenc/s57.h"
-#include "vectorreader.h"
 
 #define HEADER_SENC_VERSION 1
 #define HEADER_CELL_NAME 2
@@ -45,17 +45,21 @@
 using namespace oesenc;
 
 ChartFile::ChartFile(const std::string &filename, const Config &config)
-    : m_filename(filename)
-    , m_config(config)
+    : m_config(config)
+    , m_stringstream("")
+    , m_fileStream(filename)
+    , m_reader(m_fileStream)
+
 {
-    m_reader = std::make_shared<FileReader>(m_filename);
 }
 
 ChartFile::ChartFile(const std::vector<std::byte> &data, const Config &config)
-    : m_data(data)
+    : m_stringstream(m_data)
+    , m_reader(m_stringstream)
     , m_config(config)
 {
-    m_reader = std::make_shared<VectorReader>(data);
+    std::transform(data.cbegin(), data.cend(), std::back_inserter(m_data),
+                   [](std::byte c) { return static_cast<char>(c); });
 }
 
 ChartFile::~ChartFile()
@@ -70,7 +74,7 @@ bool ChartFile::readHeaders()
     std::unordered_map<unsigned int, S57::VectorEdge> vectorEdges;
     std::unordered_map<unsigned int, S57::ConnectedNode> connectedNodes;
 
-    if (!ingest200(m_reader.get(), m_s57, vectorEdges, connectedNodes, true)) {
+    if (!ingest200(m_reader, m_s57, vectorEdges, connectedNodes, true)) {
         std::cerr << "Failed to read" << std::endl;
         return false;
     }
@@ -82,7 +86,7 @@ bool ChartFile::read()
     std::unordered_map<unsigned int, S57::VectorEdge> vectorEdges;
     std::unordered_map<unsigned int, S57::ConnectedNode> connectedNodes;
 
-    if (!ingest200(m_reader.get(), m_s57, vectorEdges, connectedNodes)) {
+    if (!ingest200(m_reader, m_s57, vectorEdges, connectedNodes)) {
         std::cerr << "Failed to read" << std::endl;
         return false;
     }
@@ -93,21 +97,17 @@ bool ChartFile::read()
     return true;
 }
 
-bool ChartFile::ingest200(IReader *fpx,
+bool ChartFile::ingest200(std::istream &stream,
                           std::vector<S57> &s57Vector,
                           std::unordered_map<unsigned int, S57::VectorEdge> &vectorEdges,
                           std::unordered_map<unsigned int, S57::ConnectedNode> &connectedNodes,
                           bool headersOnly)
 {
-    if (!fpx->open()) {
-        return false;
-    }
-
     S57 *s57 = nullptr;
 
     while (true) {
         OSENC_Record_Base record;
-        if (!fpx->read(&record, sizeof(OSENC_Record_Base))) {
+        if (!stream.read(reinterpret_cast<char *>(&record), sizeof(OSENC_Record_Base))) {
             break;
         }
 
@@ -117,8 +117,8 @@ bool ChartFile::ingest200(IReader *fpx,
                 std::cerr << "Failed to parse header" << std::endl;
                 return false;
             }
-            unsigned char *buf = getBuffer(record.record_length - sizeof(OSENC_Record_Base));
-            if (!fpx->read(buf, record.record_length - sizeof(OSENC_Record_Base))) {
+            char *buf = getBuffer(record.record_length - sizeof(OSENC_Record_Base));
+            if (!stream.read(buf, record.record_length - sizeof(OSENC_Record_Base))) {
                 return false;
             }
             auto *payload = reinterpret_cast<_OSENC_SERVERSTAT_Record_Payload *>(buf);
@@ -140,8 +140,8 @@ bool ChartFile::ingest200(IReader *fpx,
                 std::cerr << "Failed to parse header" << std::endl;
                 return false;
             }
-            unsigned char *buf = getBuffer(record.record_length - sizeof(OSENC_Record_Base));
-            if (!fpx->read(buf, record.record_length - sizeof(OSENC_Record_Base))) {
+            char *buf = getBuffer(record.record_length - sizeof(OSENC_Record_Base));
+            if (!stream.read(buf, record.record_length - sizeof(OSENC_Record_Base))) {
                 return false;
             }
             uint16_t *pint = (uint16_t *)buf;
@@ -155,16 +155,16 @@ bool ChartFile::ingest200(IReader *fpx,
             break;
         }
         case HEADER_CELL_NAME: {
-            unsigned char *buf = getBuffer(record.record_length - sizeof(OSENC_Record_Base));
-            if (!fpx->read(buf, record.record_length - sizeof(OSENC_Record_Base))) {
+            char *buf = getBuffer(record.record_length - sizeof(OSENC_Record_Base));
+            if (!stream.read(buf, record.record_length - sizeof(OSENC_Record_Base))) {
                 return false;
             }
             m_Name = reinterpret_cast<const char *>(buf);
             break;
         }
         case HEADER_CELL_PUBLISHDATE: {
-            unsigned char *buf = getBuffer(record.record_length - sizeof(OSENC_Record_Base));
-            if (!fpx->read(buf, record.record_length - sizeof(OSENC_Record_Base))) {
+            char *buf = getBuffer(record.record_length - sizeof(OSENC_Record_Base));
+            if (!stream.read(buf, record.record_length - sizeof(OSENC_Record_Base))) {
                 return false;
             }
             m_sdate000 = reinterpret_cast<const char *>(buf);
@@ -172,8 +172,8 @@ bool ChartFile::ingest200(IReader *fpx,
         }
 
         case HEADER_CELL_EDITION: {
-            unsigned char *buf = getBuffer(record.record_length - sizeof(OSENC_Record_Base));
-            if (!fpx->read(buf, record.record_length - sizeof(OSENC_Record_Base))) {
+            char *buf = getBuffer(record.record_length - sizeof(OSENC_Record_Base));
+            if (!stream.read(buf, record.record_length - sizeof(OSENC_Record_Base))) {
                 return false;
             }
             uint16_t *pint = (uint16_t *)buf;
@@ -182,8 +182,8 @@ bool ChartFile::ingest200(IReader *fpx,
         }
 
         case HEADER_CELL_UPDATEDATE: {
-            unsigned char *buf = getBuffer(record.record_length - sizeof(OSENC_Record_Base));
-            if (!fpx->read(buf, record.record_length - sizeof(OSENC_Record_Base))) {
+            char *buf = getBuffer(record.record_length - sizeof(OSENC_Record_Base));
+            if (!stream.read(buf, record.record_length - sizeof(OSENC_Record_Base))) {
                 return false;
             }
             m_LastUpdateDate = reinterpret_cast<const char *>(buf);
@@ -191,8 +191,8 @@ bool ChartFile::ingest200(IReader *fpx,
         }
 
         case HEADER_CELL_UPDATE: {
-            unsigned char *buf = getBuffer(record.record_length - sizeof(OSENC_Record_Base));
-            if (!fpx->read(buf, record.record_length - sizeof(OSENC_Record_Base))) {
+            char *buf = getBuffer(record.record_length - sizeof(OSENC_Record_Base));
+            if (!stream.read(buf, record.record_length - sizeof(OSENC_Record_Base))) {
                 return false;
             }
             uint16_t *pint = (uint16_t *)buf;
@@ -201,8 +201,8 @@ bool ChartFile::ingest200(IReader *fpx,
         }
 
         case HEADER_CELL_NATIVESCALE: {
-            unsigned char *buf = getBuffer(record.record_length - sizeof(OSENC_Record_Base));
-            if (!fpx->read(buf, record.record_length - sizeof(OSENC_Record_Base))) {
+            char *buf = getBuffer(record.record_length - sizeof(OSENC_Record_Base));
+            if (!stream.read(buf, record.record_length - sizeof(OSENC_Record_Base))) {
                 return false;
             }
             uint32_t *pint = (uint32_t *)buf;
@@ -211,8 +211,8 @@ bool ChartFile::ingest200(IReader *fpx,
         }
 
         case HEADER_CELL_SOUNDINGDATUM: {
-            unsigned char *buf = getBuffer(record.record_length - sizeof(OSENC_Record_Base));
-            if (!fpx->read(buf, record.record_length - sizeof(OSENC_Record_Base))) {
+            char *buf = getBuffer(record.record_length - sizeof(OSENC_Record_Base));
+            if (!stream.read(buf, record.record_length - sizeof(OSENC_Record_Base))) {
                 return false;
             }
             m_SoundingDatum = reinterpret_cast<const char *>(buf);
@@ -220,16 +220,16 @@ bool ChartFile::ingest200(IReader *fpx,
         }
 
         case HEADER_CELL_SENCCREATEDATE: {
-            unsigned char *buf = getBuffer(record.record_length - sizeof(OSENC_Record_Base));
-            if (!fpx->read(buf, record.record_length - sizeof(OSENC_Record_Base))) {
+            char *buf = getBuffer(record.record_length - sizeof(OSENC_Record_Base));
+            if (!stream.read(buf, record.record_length - sizeof(OSENC_Record_Base))) {
                 return false;
             }
             break;
         }
 
         case CELL_EXTENT_RECORD: {
-            unsigned char *buf = getBuffer(record.record_length - sizeof(OSENC_Record_Base));
-            if (!fpx->read(buf, record.record_length - sizeof(OSENC_Record_Base))) {
+            char *buf = getBuffer(record.record_length - sizeof(OSENC_Record_Base));
+            if (!stream.read(buf, record.record_length - sizeof(OSENC_Record_Base))) {
                 return false;
             }
             _OSENC_EXTENT_Record_Payload *pPayload = (_OSENC_EXTENT_Record_Payload *)buf;
@@ -240,16 +240,16 @@ bool ChartFile::ingest200(IReader *fpx,
         }
 
         case CELL_COVR_RECORD: {
-            unsigned char *buf = getBuffer(record.record_length - sizeof(OSENC_Record_Base));
-            if (!fpx->read(buf, record.record_length - sizeof(OSENC_Record_Base))) {
+            char *buf = getBuffer(record.record_length - sizeof(OSENC_Record_Base));
+            if (!stream.read(buf, record.record_length - sizeof(OSENC_Record_Base))) {
                 return false;
             }
             break;
         }
 
         case CELL_NOCOVR_RECORD: {
-            unsigned char *buf = getBuffer(record.record_length - sizeof(OSENC_Record_Base));
-            if (!fpx->read(buf, record.record_length - sizeof(OSENC_Record_Base))) {
+            char *buf = getBuffer(record.record_length - sizeof(OSENC_Record_Base));
+            if (!stream.read(buf, record.record_length - sizeof(OSENC_Record_Base))) {
                 return false;
             }
             break;
@@ -257,11 +257,10 @@ bool ChartFile::ingest200(IReader *fpx,
 
         case FEATURE_ID_RECORD: {
             if (headersOnly) {
-                fpx->close();
                 return true;
             }
-            unsigned char *buf = getBuffer(record.record_length - sizeof(OSENC_Record_Base));
-            if (!fpx->read(buf, record.record_length - sizeof(OSENC_Record_Base))) {
+            char *buf = getBuffer(record.record_length - sizeof(OSENC_Record_Base));
+            if (!stream.read(buf, record.record_length - sizeof(OSENC_Record_Base))) {
                 return false;
             }
             _OSENC_Feature_Identification_Record_Payload *pPayload = (_OSENC_Feature_Identification_Record_Payload *)buf;
@@ -272,8 +271,8 @@ bool ChartFile::ingest200(IReader *fpx,
         }
 
         case FEATURE_ATTRIBUTE_RECORD: {
-            unsigned char *buf = getBuffer(record.record_length - sizeof(OSENC_Record_Base));
-            if (!fpx->read(buf, record.record_length - sizeof(OSENC_Record_Base))) {
+            char *buf = getBuffer(record.record_length - sizeof(OSENC_Record_Base));
+            if (!stream.read(buf, record.record_length - sizeof(OSENC_Record_Base))) {
                 return false;
             }
             OSENC_Attribute_Record_Payload *pPayload = (OSENC_Attribute_Record_Payload *)buf;
@@ -332,8 +331,8 @@ bool ChartFile::ingest200(IReader *fpx,
         }
 
         case FEATURE_GEOMETRY_RECORD_POINT: {
-            unsigned char *buf = getBuffer(record.record_length - sizeof(OSENC_Record_Base));
-            if (!fpx->read(buf, record.record_length - sizeof(OSENC_Record_Base))) {
+            char *buf = getBuffer(record.record_length - sizeof(OSENC_Record_Base));
+            if (!stream.read(buf, record.record_length - sizeof(OSENC_Record_Base))) {
                 return false;
             }
 
@@ -346,8 +345,8 @@ bool ChartFile::ingest200(IReader *fpx,
         }
 
         case FEATURE_GEOMETRY_RECORD_AREA: {
-            unsigned char *buf = getBuffer(record.record_length - sizeof(OSENC_Record_Base));
-            if (!fpx->read(buf, record.record_length - sizeof(OSENC_Record_Base))) {
+            char *buf = getBuffer(record.record_length - sizeof(OSENC_Record_Base));
+            if (!stream.read(buf, record.record_length - sizeof(OSENC_Record_Base))) {
                 return false;
             }
             _OSENC_AreaGeometry_Record_Payload *pPayload = (_OSENC_AreaGeometry_Record_Payload *)buf;
@@ -357,23 +356,23 @@ bool ChartFile::ingest200(IReader *fpx,
 
             if (s57 != nullptr) {
                 s57->setPolygonGeometry(reinterpret_cast<S57::LineElement *>(next_byte),
-                                     pPayload->edgeVector_count);
+                                        pPayload->edgeVector_count);
             }
 
             break;
         }
 
         case FEATURE_GEOMETRY_RECORD_AREA_EXT: {
-            unsigned char *buf = getBuffer(record.record_length - sizeof(OSENC_Record_Base));
-            if (!fpx->read(buf, record.record_length - sizeof(OSENC_Record_Base))) {
+            char *buf = getBuffer(record.record_length - sizeof(OSENC_Record_Base));
+            if (!stream.read(buf, record.record_length - sizeof(OSENC_Record_Base))) {
                 return false;
             }
             break;
         }
 
         case FEATURE_GEOMETRY_RECORD_LINE: {
-            unsigned char *buf = getBuffer(record.record_length - sizeof(OSENC_Record_Base));
-            if (!fpx->read(buf, record.record_length - sizeof(OSENC_Record_Base))) {
+            char *buf = getBuffer(record.record_length - sizeof(OSENC_Record_Base));
+            if (!stream.read(buf, record.record_length - sizeof(OSENC_Record_Base))) {
                 return false;
             }
             _OSENC_LineGeometry_Record_Payload *pPayload = (_OSENC_LineGeometry_Record_Payload *)buf;
@@ -385,8 +384,8 @@ bool ChartFile::ingest200(IReader *fpx,
         }
 
         case FEATURE_GEOMETRY_RECORD_MULTIPOINT: {
-            unsigned char *buf = getBuffer(record.record_length - sizeof(OSENC_Record_Base));
-            if (!fpx->read(buf, record.record_length - sizeof(OSENC_Record_Base))) {
+            char *buf = getBuffer(record.record_length - sizeof(OSENC_Record_Base));
+            if (!stream.read(buf, record.record_length - sizeof(OSENC_Record_Base))) {
                 return false;
             }
             OSENC_MultipointGeometry_Record_Payload *pPayload = (OSENC_MultipointGeometry_Record_Payload *)buf;
@@ -410,8 +409,8 @@ bool ChartFile::ingest200(IReader *fpx,
         }
 
         case VECTOR_EDGE_NODE_TABLE_RECORD: {
-            unsigned char *buf = getBuffer(record.record_length - sizeof(OSENC_Record_Base));
-            if (!fpx->read(buf, record.record_length - sizeof(OSENC_Record_Base))) {
+            char *buf = getBuffer(record.record_length - sizeof(OSENC_Record_Base));
+            if (!stream.read(buf, record.record_length - sizeof(OSENC_Record_Base))) {
                 return false;
             }
             uint8_t *pRun = (uint8_t *)buf;
@@ -452,8 +451,8 @@ bool ChartFile::ingest200(IReader *fpx,
         }
 
         case VECTOR_EDGE_NODE_TABLE_EXT_RECORD: {
-            unsigned char *buf = getBuffer(record.record_length - sizeof(OSENC_Record_Base));
-            if (!fpx->read(buf, record.record_length - sizeof(OSENC_Record_Base))) {
+            char *buf = getBuffer(record.record_length - sizeof(OSENC_Record_Base));
+            if (!stream.read(buf, record.record_length - sizeof(OSENC_Record_Base))) {
                 return false;
             }
             break;
@@ -461,8 +460,8 @@ bool ChartFile::ingest200(IReader *fpx,
 
         case VECTOR_CONNECTED_NODE_TABLE_RECORD: {
             long unsigned int buf_len = record.record_length - sizeof(OSENC_Record_Base);
-            unsigned char *buf = getBuffer(buf_len);
-            if (!fpx->read(buf, buf_len)) {
+            char *buf = getBuffer(buf_len);
+            if (!stream.read(buf, buf_len)) {
                 return false;
             }
 
@@ -492,8 +491,8 @@ bool ChartFile::ingest200(IReader *fpx,
         }
 
         case CELL_TXTDSC_INFO_FILE_RECORD: {
-            unsigned char *buf = getBuffer(record.record_length - sizeof(OSENC_Record_Base));
-            if (!fpx->read(buf, record.record_length - sizeof(OSENC_Record_Base))) {
+            char *buf = getBuffer(record.record_length - sizeof(OSENC_Record_Base));
+            if (!stream.read(buf, record.record_length - sizeof(OSENC_Record_Base))) {
                 return false;
             }
             break;
@@ -509,7 +508,7 @@ bool ChartFile::ingest200(IReader *fpx,
             break;
         }
     }
-    fpx->close();
+
     return true;
 }
 
@@ -539,10 +538,10 @@ uint8_t *ChartFile::skipTessellationData(_OSENC_AreaGeometry_Record_Payload *rec
     return pPayloadRun;
 }
 
-unsigned char *ChartFile::getBuffer(size_t length)
+char *ChartFile::getBuffer(size_t length)
 {
     if (length > bufferSize) {
-        pBuffer = (unsigned char *)realloc(pBuffer, length * 2);
+        pBuffer = (char *)realloc(pBuffer, length * 2);
         bufferSize = length * 2;
     }
     return pBuffer;

@@ -1,7 +1,9 @@
 #pragma once
 
+#include <fstream>
 #include <functional>
 #include <memory>
+#include <sstream>
 #include <unordered_map>
 #include <vector>
 
@@ -348,8 +350,6 @@ typedef struct
 
 namespace oesenc {
 
-class IReader;
-
 class OESENC_EXPORT ChartFile
 {
 public:
@@ -376,16 +376,14 @@ public:
     const std::vector<S57> &s57() const { return m_s57; }
 
 private:
-    bool ingest200(IReader *reader,
+    bool ingest200(std::istream &stream,
                    std::vector<S57> &s57Vector,
                    std::unordered_map<unsigned int, S57::VectorEdge> &vectorEdges,
                    std::unordered_map<unsigned int, S57::ConnectedNode> &connectedNodes,
                    bool headersOnly = false);
-    unsigned char *getBuffer(size_t length);
+    char *getBuffer(size_t length);
     uint8_t *skipTessellationData(_OSENC_AreaGeometry_Record_Payload *record);
 
-    std::vector<std::byte> m_data;
-    std::string m_filename;
     std::string m_Name;
     std::string m_sdate000;
     std::string m_LastUpdateDate;
@@ -400,11 +398,15 @@ private:
     int m_nativeScale = 0;
     int m_read_base = 0;
 
-    unsigned char *pBuffer = nullptr;
+    char *pBuffer = nullptr;
     size_t bufferSize = 0;
     Config m_config;
     Rect m_extent;
-    std::shared_ptr<IReader> m_reader;
+
+    std::string m_data;
+    std::ifstream m_fileStream;
+    std::stringstream m_stringstream;
+    std::istream &m_reader;
     std::vector<S57> m_s57;
 };
 
