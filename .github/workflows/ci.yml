@@ -8,7 +8,7 @@ on:
       - main
 
 jobs:
-  windows:
+  Windows:
     runs-on: windows-latest
     steps:
       - name: Check out repository
@@ -32,8 +32,9 @@ jobs:
         working-directory: ${{ github.workspace }}/builds/ninja-multi-vcpkg
         run: ctest -V -C Debug
 
-  linux:
-    runs-on: ubuntu-latest
+  ubuntu-20-04:
+    name: 'Ubuntu 20.04'
+    runs-on: ubuntu-20.04
     steps:
       - name: Checkout
         uses: actions/checkout@v2

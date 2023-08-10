@@ -1,4 +1,4 @@
-find_package(GTest CONFIG REQUIRED)
+find_package(GTest REQUIRED)
 
 enable_testing()
 
