@@ -30,7 +30,7 @@ jobs:
 
       - name: Run unit tests
         working-directory: ${{ github.workspace }}/builds/ninja-multi-vcpkg
-        run: ctest -V -C Debug
+        run: ctest -C Debug
 
   ubuntu-20-04:
     name: 'Ubuntu 20.04'
@@ -54,4 +54,4 @@ jobs:
 
       - name: Run unit tests
         working-directory: ${{ github.workspace }}/builds/ninja-multi
-        run: ctest -V -C Debug
+        run: ctest -C Debug
