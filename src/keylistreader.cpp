@@ -1,6 +1,8 @@
 #include "oesenc/keylistreader.h"
 #include <filesystem>
+#include <fstream>
 #include <iostream>
+#include <regex>
 #include <tinyxml2.h>
 
 using namespace oesenc;
@@ -65,5 +67,33 @@ unordered_map<string, string> KeyListReader::readOesuKeys(string_view chartDir)
             return chartKeys;
         }
     }
+    return {};
+}
+
+string KeyListReader::readOesencKey(std::string_view chartDir)
+{
+    auto chartInfoFileName = filesystem::path(chartDir) / "Chartinfo.txt";
+
+    if (!filesystem::exists(chartInfoFileName)) {
+        return {};
+    }
+
+    ifstream file(chartInfoFileName);
+    string line;
+
+    const std::regex regex("^UserKey:(.+)$");
+
+    while (std::getline(file, line)) {
+        std::smatch match;
+
+        if (std::regex_match(line, match, regex) && match.size() == 2) {
+            try {
+                return match[1].str();
+            } catch (const std::invalid_argument &exception) {
+                return {};
+            }
+        }
+    }
+
     return {};
 }
