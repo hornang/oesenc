@@ -34,6 +34,26 @@ TEST(testKeyListReader, ReadOesuKeyList)
     ASSERT_EQ(keys["file2"], "key2");
 }
 
+TEST(testKeyListReader, ReadOesencKey)
+{
+    const string chartInfoData = R"(UserKey:keyvalue
+
+otherKey1:otherValue1
+
+otherKey2:otherValue2
+
+)";
+
+    filesystem::path dataDir("data");
+    filesystem::create_directory(dataDir);
+    std::ofstream keyListFile(dataDir / "Chartinfo.txt");
+    keyListFile << chartInfoData;
+    keyListFile.close();
+
+    auto key = KeyListReader::readOesencKey(dataDir.string());
+    ASSERT_EQ(key, "keyvalue");
+}
+
 int main(int argc, char **argv)
 {
     ::testing::InitGoogleTest(&argc, argv);

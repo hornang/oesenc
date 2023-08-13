@@ -11,5 +11,6 @@ class OESENC_EXPORT KeyListReader
 {
 public:
     static std::unordered_map<std::string, std::string> readOesuKeys(std::string_view chartDir);
+    static std::string readOesencKey(std::string_view chartDir);
 };
 }
