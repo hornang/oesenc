@@ -1,62 +1,69 @@
 #include "oesenc/keylistreader.h"
+#include <filesystem>
 #include <iostream>
 #include <tinyxml2.h>
 
 using namespace oesenc;
+using namespace std;
 
-KeyListReader::Status KeyListReader::load(const std::string &filename)
+namespace {
+
+unordered_map<string, string> parseFile(const string &filename)
 {
     tinyxml2::XMLDocument doc;
     if (doc.LoadFile(filename.c_str()) != tinyxml2::XML_SUCCESS) {
-        return Status::Failed;
+        return {};
     }
 
     const char *chartElementName = "Chart";
     const auto *rootElement = doc.RootElement();
 
-    Status status = Status::Unknown;
+    if (rootElement == nullptr) {
+        return {};
+    }
+    auto *keyList = doc.FirstChildElement("keyList");
 
-    if (rootElement != nullptr) {
-        auto *keyList = doc.FirstChildElement("keyList");
+    if (!keyList) {
+        return {};
+    }
 
-        if (!keyList) {
-            return Status::Failed;
-        }
+    auto *chart = keyList->FirstChildElement(chartElementName);
+    unordered_map<string, string> keys;
 
-        auto *chart = keyList->FirstChildElement(chartElementName);
+    while (chart) {
+        auto *fileNameElement = chart->FirstChildElement("FileName");
+        auto *rInstallKeyElement = chart->FirstChildElement("RInstallKey");
 
-        while (chart) {
-            auto *fileNameElement = chart->FirstChildElement("FileName");
-            auto *rInstallKeyElement = chart->FirstChildElement("RInstallKey");
+        if (fileNameElement && rInstallKeyElement) {
+            auto *nameText = fileNameElement->GetText();
+            auto *rInstallText = rInstallKeyElement->GetText();
 
-            if (fileNameElement && rInstallKeyElement) {
-                auto *nameText = fileNameElement->GetText();
-                auto *rInstallText = rInstallKeyElement->GetText();
-
-                if (nameText && rInstallText && strlen(nameText) > 0) {
-                    m_chartKeys[nameText] = rInstallText;
-                } else {
-                    status = Status::Partial;
-                }
+            if (nameText && rInstallText && strlen(nameText) > 0) {
+                keys[nameText] = rInstallText;
             } else {
-                status = Status::Partial;
+                return keys;
             }
-
-            chart = chart->NextSiblingElement(chartElementName);
+        } else {
+            return keys;
         }
+
+        chart = chart->NextSiblingElement(chartElementName);
     }
 
-    if (status == Status::Unknown) {
-        status = Status::Success;
-    }
-
-    return status;
+    return keys;
+}
 }
 
-std::string KeyListReader::key(const std::string &chartName) const
+unordered_map<string, string> KeyListReader::readOesuKeys(string_view chartDir)
 {
-    if (m_chartKeys.find(chartName) != m_chartKeys.end()) {
-        return m_chartKeys.at(chartName);
+    for (auto &p : filesystem::directory_iterator(chartDir)) {
+        if (p.path().extension() != ".XML" && p.path().extension() != ".xml") {
+            continue;
+        }
+        auto chartKeys = parseFile(p.path().string());
+        if (!chartKeys.empty()) {
+            return chartKeys;
+        }
     }
     return {};
 }
