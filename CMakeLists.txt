@@ -16,7 +16,6 @@ add_library(oesenc
     src/chartfile.cpp
     src/opencpn.cpp
     src/position.cpp
-    src/reader.h
     src/rect.cpp
     src/s57.cpp
 )
