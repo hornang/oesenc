@@ -17,6 +17,7 @@ function(addTest)
 endfunction()
 
 addTest(chartfile)
+addTest(servercontrol)
 
 if(OESENC_KEYLISTREADER_ENABLED)
     addTest(keylistreader)
