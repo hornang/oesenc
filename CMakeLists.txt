@@ -12,13 +12,27 @@ add_library(oesenc
     include/oesenc/chartfile.h
     include/oesenc/position.h
     include/oesenc/rect.h
+    include/oesenc/servercontrol.h
+    include/oesenc/serverreader.h
     include/oesenc/s57.h
     src/chartfile.cpp
     src/opencpn.cpp
     src/position.cpp
+    src/random.cpp
+    src/random.h
     src/rect.cpp
+    src/servercontrol.cpp
+    src/serverreader.cpp
     src/s57.cpp
 )
+
+if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
+  target_compile_definitions(oesenc PUBLIC "OESENC_LINUX")
+endif()
+
+if(CMAKE_SYSTEM_NAME STREQUAL "Windows")
+  target_compile_definitions(oesenc PUBLIC "OESENC_WINDOWS")
+endif()
 
 find_package(tinyxml2 QUIET)
 
@@ -50,6 +64,10 @@ target_include_directories(oesenc PUBLIC
     $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}>
     $<INSTALL_INTERFACE:include>
 )
+
+if(OESENC_KEYLISTREADER_ENABLED)
+    add_subdirectory(examples)
+endif()
 
 if (BUILD_TESTING)
     add_subdirectory(tests)
