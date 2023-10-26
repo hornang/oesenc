@@ -20,7 +20,7 @@ The work of communicating with oexserverd and loading the correct key is handled
 
 [Example reading of oesu file](examples/oesu_example.cpp):
 
-```
+```cpp
 filesystem::path chartFileName = "C:/Path/to/chartdir/chartfile.oesu";
 
 unordered_map<string, string> keys = KeyListReader::readOesuKeys(chartFileName.parent_path().string());
@@ -46,7 +46,7 @@ cout << "Num objects " << s57Objects.size() << "\n";
 
 [Example reading oesenc file](examples/oesenc_example.cpp):
 
-```
+```cpp
 filesystem::path chartFileName = "C:/Path/to/chartdir/chartfile.oesenc";
 
 string key = KeyListReader::readOesencKey(chartFileName.parent_path().string());
