@@ -97,6 +97,24 @@ TEST(ServerControl, ReusesServer)
     ASSERT_EQ(pipeName, serverControl.pipeName());
 }
 
+#ifdef OESENC_LINUX
+TEST(ServerControl, DontBlockOnDeadPipe)
+{
+    string pipeName;
+    {
+        ServerControl serverControl(ServerControl::Flags::DontStartServer
+                                    | ServerControl::Flags::LeaveServerRunning);
+        pipeName = serverControl.pipeName();
+        mkfifo(pipeName.c_str(), 0666);
+    }
+
+    ServerControl serverControl(ServerControl::Flags::DontStartServer);
+
+    ASSERT_FALSE(serverControl.isReady());
+    remove(pipeName.c_str());
+}
+#endif
+
 int main(int argc, char **argv)
 {
     ::testing::InitGoogleTest(&argc, argv);
