@@ -8,6 +8,7 @@
 
 #ifdef OESENC_LINUX
 #include <cassert>
+#include <fcntl.h>
 #include <signal.h>
 #include <string.h>
 #include <sys/stat.h>
@@ -63,6 +64,20 @@ optional<PROCESS_INFORMATION> startOexserverd(const string &pipeName)
 
 #endif
 
+#ifdef OESENC_LINUX
+bool isPipeOpenedByReader(string_view pipeName)
+{
+    int fd = open(pipeName.data(), O_WRONLY | O_NONBLOCK);
+
+    if (fd == -1) {
+        return false;
+    }
+
+    close(fd);
+    return true;
+}
+#endif
+
 string readUntilEof(unique_ptr<istream> &stream)
 {
     return string((istreambuf_iterator<char>(*stream.get())),
@@ -71,6 +86,13 @@ string readUntilEof(unique_ptr<istream> &stream)
 
 bool requestServerToExit(string_view pipeName)
 {
+
+#ifdef OESENC_LINUX
+    if (!isPipeOpenedByReader(pipeName)) {
+        return false;
+    }
+#endif
+
     auto stream = ServerReader::request(pipeName, ServerReader::Command::Exit, {}, {});
     if (!stream) {
         return false;
@@ -120,6 +142,7 @@ ServerControl::ServerControl(Flags flags, string_view pipeName)
     if (flags & Flags(Flags::DontStartServer)) {
         return;
     }
+#include <sys/stat.h>
 
     if (m_pipeName.empty()) {
         m_pipeName = randomAlphaNumericString(10);
@@ -144,6 +167,12 @@ bool ServerControl::isReady()
     if (m_pipeName.empty()) {
         return false;
     }
+
+#ifdef OESENC_LINUX
+    if (!isPipeOpenedByReader(m_pipeName)) {
+        return false;
+    }
+#endif
 
     auto stream = ServerReader::request(m_pipeName, ServerReader::Command::TestAvailability, {}, {});
 
