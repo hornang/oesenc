@@ -1,5 +1,7 @@
 # oesenc nautical chart reading library
 
+![Build status](https://github.com/hornang/oesenc/actions/workflows/ci.yml/badge.svg)
+
 A standalone C++ library to read OpenCPN's oesenc/oesu charts.
 
 ## Motivation
