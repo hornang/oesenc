@@ -6,7 +6,7 @@ export LC_ALL=en_US.utf8
 
 case "$OSTYPE" in
   linux*)
-	PLUGIN_REGEXP="(?<=<tarball-url>).*o-charts.*-ubuntu-22.04.*x86.*?(?=</tarball-url>)"
+	PLUGIN_REGEXP="(?<=<tarball-url>).*o-charts.*-debian-x86_64.*?(?=</tarball-url>)"
   ;;
   msys*|cygwin)
 	PLUGIN_REGEXP="(?<=<tarball-url>).*o-charts.*msvc.*win32.*?(?=</tarball-url>)"
