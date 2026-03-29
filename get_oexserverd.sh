@@ -9,7 +9,7 @@ case "$OSTYPE" in
 	PLUGIN_REGEXP="(?<=<tarball-url>).*o-charts.*-debian-x86_64.*?(?=</tarball-url>)"
   ;;
   msys*|cygwin)
-	PLUGIN_REGEXP="(?<=<tarball-url>).*o-charts.*msvc.*win32.*?(?=</tarball-url>)"
+	PLUGIN_REGEXP="(?<=<tarball-url>).*o-charts.*msvc.*wx32.*?(?=</tarball-url>)"
   ;;
   *)
 	echo Unknown system $OSTYPE >&2
