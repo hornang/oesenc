@@ -22,7 +22,7 @@ curl --fail https://raw.githubusercontent.com/OpenCPN/plugins/master/ocpn-plugin
 TARBALL_URL=$(grep -m 1 -o -P "$PLUGIN_REGEXP" $PLUGIN_XML_FILE)
 curl --fail $TARBALL_URL -o tarball.tar.gz
 tar xf tarball.tar.gz
-EXTRACTED_DIR=$(find -type d -iname o-charts*)
+EXTRACTED_DIR=$(find -type d -iname "o-charts*")
 OEXSERVERD_PATH=$(find $EXTRACTED_DIR -type f -iname "oexserverd*")
 echo "Location of executable: $OEXSERVERD_PATH"
 PATHFILE=./oexserverd_path.txt
